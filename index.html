@@ -4,6 +4,11 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>NerdTechno</title>
+  <link rel="icon" type="image/x-icon" href="./assets/favicon.ico?v=4" />
+  <link rel="shortcut icon" href="./assets/favicon.ico?v=4" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32.png?v=4" />
+  <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon-16.png?v=4" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png?v=4" />
   <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
@@ -15,10 +20,341 @@
 
   <main class="page">
     <section class="hero" aria-label="NerdTechno Logo">
-      <img class="hero-logo" src="./assets/logo.svg" alt="NerdTechno" />
+      <div class="hero-visual">
+        <svg class="hero-logo-svg" viewBox="0 0 8821 2713" aria-label="NerdTechno" role="img" xmlns="http://www.w3.org/2000/svg">
+          <rect x="0" y="0" width="8821" height="2713" fill="#e8e8e8"/>
+
+          <g class="floating-block block-1">
+            <path fill="#000000" d="M 720 0 L 1720 0 L 1720 1530 Z"/>
+          </g>
+
+          <g class="floating-block block-2">
+            <path fill="#000000" d="M 720 1530 L 1300 2713 L 720 2713 Z"/>
+          </g>
+
+          <g class="floating-block block-3">
+            <path fill="#000000" d="M 2640 350 L 4320 350 L 4320 2100 L 3660 2100 L 3660 1540 L 3180 1540 L 3180 1080 L 2640 1080 Z"/>
+          </g>
+
+          <g class="floating-block block-4">
+            <circle fill="#000000" cx="5160" cy="700" r="360"/>
+          </g>
+
+          <g class="floating-block block-5">
+            <path fill="#000000" d="M 5640 1540 L 6200 1540 L 6370 2713 L 5470 2713 Z"/>
+          </g>
+
+          <g class="floating-block block-6">
+            <path fill="#000000" d="M 7100 350 L 7750 350 L 8680 1530 L 7750 2100 L 7100 2100 Z"/>
+          </g>
+
+          <g class="floating-block block-7">
+            <path fill="#000000" d="M 7750 0 L 8821 0 L 8821 840 Z"/>
+          </g>
+        </svg>
+      </div>
     </section>
     <div class="accent-bar" aria-hidden="true"></div>
-    <section class="content-blank" aria-hidden="true"></section>
+    <section class="hero-copy" aria-label="Studio Intro">
+      <p class="hero-text">We are NerdTechno,<br />a design &amp; engineering studio based in <a class="wuxi-link" href="https://www.jiangnan.edu.cn/">Wuxi, China</a>.</p>
+      <p class="hero-text">We focus on<br /><span class="studio-mark" tabindex="0">nerd(esign) &amp; techno(logy)</span>.</p>
+    </section>
   </main>
+
+  <footer class="site-footer" aria-label="Social Media">
+    <a class="social-link" href="https://www.xiaohongshu.com/user/profile/681bfbdb000000000e01dc4a" aria-label="Rednote">
+      <span class="social-name">rednote</span>
+      <span class="social-arrow" aria-hidden="true">↗</span>
+    </a>
+    <p class="footer-copy">&copy; 2026 NerdTechno</p>
+  </footer>
+
+  <div class="dot-cursor" aria-hidden="true"></div>
+
+  <script>
+    (function () {
+      const nav = document.querySelector(".site-nav");
+      const bar = document.querySelector(".accent-bar");
+      if (!nav || !bar) return;
+
+      const updateNavPosition = () => {
+        const navRect = nav.getBoundingClientRect();
+        const barRect = bar.getBoundingClientRect();
+        const inAccent = navRect.bottom > barRect.top && navRect.top < barRect.bottom;
+        nav.classList.toggle("on-accent", inAccent);
+      };
+
+      updateNavPosition();
+      window.addEventListener("scroll", updateNavPosition, { passive: true });
+      window.addEventListener("resize", updateNavPosition);
+    })();
+
+    (function () {
+      const cursor = document.querySelector(".dot-cursor");
+      if (!cursor) return;
+      const supportsFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+      if (!supportsFinePointer) return;
+
+      document.body.classList.add("custom-cursor");
+
+      const moveCursor = (event) => {
+        cursor.style.left = `${event.clientX}px`;
+        cursor.style.top = `${event.clientY}px`;
+      };
+
+      const setCursorHoverState = (event) => {
+        const interactive = event.target.closest("a, button, [role='button']");
+        document.body.classList.toggle("cursor-hover", Boolean(interactive));
+      };
+
+      window.addEventListener("pointermove", moveCursor, { passive: true });
+      window.addEventListener("pointerdown", moveCursor, { passive: true });
+      window.addEventListener("pointerover", setCursorHoverState, { passive: true });
+      window.addEventListener("pointerout", setCursorHoverState, { passive: true });
+    })();
+
+    (function () {
+      const mark = document.querySelector(".studio-mark");
+      if (!mark) return;
+
+      const text = mark.textContent || "";
+      const chars = [];
+      const frag = document.createDocumentFragment();
+
+      for (let i = 0; i < text.length; i += 1) {
+        const ch = text[i];
+        const span = document.createElement("span");
+        span.className = ch === " " ? "mark-char mark-space" : "mark-char";
+        span.style.setProperty("--char-index", String(i));
+        span.textContent = ch === " " ? "\u00A0" : ch;
+        chars.push(span);
+        frag.appendChild(span);
+      }
+
+      mark.textContent = "";
+      mark.appendChild(frag);
+
+      const fontClasses = ["font-a", "font-b", "font-c", "font-d"];
+      const staggerStep = 36;
+      const cycleGap = 1300;
+
+      const runCycle = () => {
+        chars.forEach((charEl, index) => {
+          if (charEl.classList.contains("mark-space")) return;
+          window.setTimeout(() => {
+            charEl.classList.remove("font-a", "font-b", "font-c", "font-d");
+            const fontClass = fontClasses[Math.floor(Math.random() * fontClasses.length)];
+            charEl.classList.add(fontClass);
+          }, index * staggerStep);
+        });
+      };
+
+      runCycle();
+      window.setInterval(runCycle, cycleGap);
+    })();
+
+    (function () {
+      const visual = document.querySelector(".hero-visual");
+      const svg = document.querySelector(".hero-logo-svg");
+      if (!visual || !svg) return;
+
+      const blocks = Array.from(svg.querySelectorAll(".floating-block"));
+      if (blocks.length === 0) return;
+
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (prefersReducedMotion) return;
+
+      const supportsFinePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+      const states = blocks.map((el, index) => ({
+        el,
+        index,
+        x: 0,
+        y: 0,
+        r: 0,
+        vx: 0,
+        vy: 0,
+        vr: 0,
+        cx: 0,
+        cy: 0,
+        radius: 0,
+        fx: 0.22 + index * 0.027,
+        fy: 0.18 + index * 0.023,
+        fr: 0.14 + index * 0.019,
+        ax: 12 + (index % 3) * 5,
+        ay: 8 + (index % 2) * 4,
+        ar: 0.55 + (index % 4) * 0.12,
+        px: index * 0.93,
+        py: index * 1.27,
+        pr: index * 0.61,
+        floorY: 0,
+        s: 1,
+        vs: 0,
+        targetS: 1,
+        scaleTimer: 0,
+        clicks: 0,
+        isDropped: false,
+        dropThreshold: Math.floor(Math.random() * 10) + 1
+      }));
+      const stateByEl = new Map(states.map((state) => [state.el, state]));
+
+      const refreshBounds = () => {
+        const viewHeight = svg.viewBox.baseVal.height || 2713;
+        const floorPadding = 28;
+
+        states.forEach((state) => {
+          const box = state.el.getBBox();
+          state.cx = box.x + box.width * 0.5;
+          state.cy = box.y + box.height * 0.5;
+          state.radius = Math.max(box.width, box.height) * 0.5;
+          state.floorY = viewHeight - floorPadding - (box.y + box.height);
+        });
+      };
+
+      const toSvgPoint = (clientX, clientY) => {
+        const matrix = svg.getScreenCTM();
+        if (!matrix) return null;
+        const point = new DOMPoint(clientX, clientY).matrixTransform(matrix.inverse());
+        return point;
+      };
+
+      const applyPointerImpulse = (clientX, clientY) => {
+        const point = toSvgPoint(clientX, clientY);
+        if (!point) return;
+
+        states.forEach((state) => {
+          if (state.isDropped) return;
+          const dx = state.cx - point.x;
+          const dy = state.cy - point.y;
+          const dist = Math.hypot(dx, dy) || 1;
+          const reach = state.radius + 920;
+          if (dist >= reach) return;
+
+          const t = 1 - dist / reach;
+          const nx = dx / dist;
+          const ny = dy / dist;
+          const impulse = t * 0.62;
+
+          state.vx += nx * impulse;
+          state.vy += ny * impulse;
+          state.vr += (nx * 0.18 - ny * 0.1) * t;
+        });
+      };
+
+      const triggerScale = (state) => {
+        state.targetS = 1.12;
+        window.clearTimeout(state.scaleTimer);
+        state.scaleTimer = window.setTimeout(() => {
+          state.targetS = 1;
+        }, 170);
+      };
+
+      const dropState = (state) => {
+        state.isDropped = true;
+        state.vy += 0.8 + Math.random() * 0.6;
+        state.vx += (Math.random() - 0.5) * 1.2;
+        state.vr += (Math.random() - 0.5) * 0.7;
+      };
+
+      const start = performance.now();
+      const spring = 0.037;
+      const springR = 0.032;
+      const damping = 0.9;
+      const dampingR = 0.88;
+      const gravity = 0.82;
+      const bounce = 0.26;
+      const floorFriction = 0.86;
+
+      const animate = (now) => {
+        const time = (now - start) * 0.001;
+
+        states.forEach((state) => {
+          if (!state.isDropped) {
+            const targetX = Math.sin(time * state.fx + state.px) * state.ax;
+            const targetY = Math.cos(time * state.fy + state.py) * state.ay;
+            const targetR = Math.sin(time * state.fr + state.pr) * state.ar;
+
+            state.vx += (targetX - state.x) * spring;
+            state.vy += (targetY - state.y) * spring;
+            state.vr += (targetR - state.r) * springR;
+
+            state.vx *= damping;
+            state.vy *= damping;
+            state.vr *= dampingR;
+
+            state.x += state.vx;
+            state.y += state.vy;
+            state.r += state.vr;
+          } else {
+            state.vy += gravity;
+            state.vx *= 0.996;
+            state.vr *= 0.992;
+
+            state.x += state.vx;
+            state.y += state.vy;
+            state.r += state.vr;
+
+            if (state.y > state.floorY) {
+              state.y = state.floorY;
+              if (Math.abs(state.vy) > 0.18) {
+                state.vy *= -bounce;
+                state.vx *= floorFriction;
+                state.vr *= 0.9;
+              } else {
+                state.vy = 0;
+                state.vx *= 0.9;
+                if (Math.abs(state.vx) < 0.02) state.vx = 0;
+                if (Math.abs(state.vr) < 0.02) state.vr = 0;
+              }
+            }
+          }
+
+          state.vs += (state.targetS - state.s) * 0.24;
+          state.vs *= 0.72;
+          state.s += state.vs;
+
+          state.el.style.transform = `translate(${state.x.toFixed(2)}px, ${state.y.toFixed(2)}px) rotate(${state.r.toFixed(2)}deg) scale(${state.s.toFixed(3)})`;
+        });
+
+        window.requestAnimationFrame(animate);
+      };
+
+      refreshBounds();
+      window.addEventListener("resize", refreshBounds);
+
+      if (supportsFinePointer) {
+        visual.addEventListener("pointerenter", (event) => {
+          applyPointerImpulse(event.clientX, event.clientY);
+        });
+
+        visual.addEventListener("pointermove", (event) => {
+          applyPointerImpulse(event.clientX, event.clientY);
+        }, { passive: true });
+      }
+
+      visual.addEventListener("click", (event) => {
+        if (!(event.target instanceof Element)) return;
+        const blockEl = event.target.closest(".floating-block");
+        if (!blockEl) return;
+
+          const state = stateByEl.get(blockEl);
+          if (!state) return;
+
+          triggerScale(state);
+          if (!state.isDropped) {
+            state.vy -= 0.55;
+            state.vr += (Math.random() - 0.5) * 0.45;
+          }
+
+          state.clicks += 1;
+          if (state.clicks >= state.dropThreshold && !state.isDropped) {
+            dropState(state);
+          }
+      });
+
+      window.requestAnimationFrame(animate);
+    })();
+
+  </script>
 </body>
 </html>
