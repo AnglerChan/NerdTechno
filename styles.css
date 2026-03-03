@@ -75,13 +75,12 @@ body {
 
 .hero-logo {
   position: absolute;
-  left: 50%;
-  top: 50%;
+  inset: 0;
   display: block;
-  width: 116vw;
-  height: auto;
-  max-width: none;
-  transform: translate(-50%, -49%);
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
 }
 
 .accent-bar {
@@ -93,20 +92,6 @@ body {
 .content-blank {
   min-height: calc(56vh - clamp(64px, 10vh, 88px));
   background: var(--bg);
-}
-
-@media (max-width: 1600px) and (min-width: 1201px) {
-  .hero-logo {
-    width: 124vw;
-    transform: translate(-50%, -49%);
-  }
-}
-
-@media (max-width: 1200px) and (min-width: 901px) {
-  .hero-logo {
-    width: 140vw;
-    transform: translate(-50%, -49%);
-  }
 }
 
 @media (max-width: 900px) {
@@ -124,7 +109,6 @@ body {
   }
 
   .hero-logo {
-    width: 188vw;
-    transform: translate(-50%, -47%);
+    object-position: center 6%;
   }
 }
