@@ -51,20 +51,21 @@ body.custom-cursor [role="button"] {
   position: fixed;
   top: -100px;
   left: -100px;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background: #ffffff;
   mix-blend-mode: difference;
   pointer-events: none;
   z-index: 9999;
-  transform: translate(-50%, -50%) scale(1);
+  transform: translate3d(-50%, -50%, 0) scale(1);
   transform-origin: center;
-  transition: transform 150ms ease;
+  backface-visibility: hidden;
+  transition: transform 170ms cubic-bezier(0.2, 0.75, 0.22, 1);
 }
 
 body.cursor-hover .dot-cursor {
-  transform: translate(-50%, -50%) scale(1.7);
+  transform: translate3d(-50%, -50%, 0) scale(1.28);
 }
 
 .site-nav {
@@ -126,6 +127,7 @@ body.cursor-hover .dot-cursor {
 
 .hero-visual {
   background: var(--bg);
+  position: relative;
   overflow: hidden;
 }
 
@@ -133,6 +135,33 @@ body.cursor-hover .dot-cursor {
   display: block;
   width: 100%;
   height: auto;
+}
+
+.typer-layer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.typer-snake {
+  position: absolute;
+  inset: 0;
+}
+
+.typer-char {
+  position: absolute;
+  transform: translate(-1000px, -1000px);
+  transform-origin: center;
+  color: #000000;
+  font-family: "SFMono-Regular", "Roboto Mono", "IBM Plex Mono", "Menlo", "Consolas", "Liberation Mono", monospace;
+  font-size: clamp(12px, 0.95vw, 17px);
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0;
+  letter-spacing: normal;
+  will-change: transform, opacity;
 }
 
 .floating-block {
@@ -155,6 +184,34 @@ body.cursor-hover .dot-cursor {
   color: #000000;
   text-align: left;
   padding: clamp(34px, 4.2vw, 66px) clamp(12px, 2.1vw, 32px) clamp(34px, 4.2vw, 66px) clamp(30px, 8vw, 160px);
+}
+
+.hero-copy.about-grid-section {
+  display: block;
+  gap: 0;
+  padding: 0;
+}
+
+.about-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-top: 1px solid #000000;
+  border-left: 1px solid #000000;
+}
+
+.about-card {
+  aspect-ratio: 1 / 2;
+  border-right: 1px solid #000000;
+  border-bottom: 1px solid #000000;
+  padding: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  font-size: clamp(34px, 4.2vw, 88px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-family: Helvetica, Arial, sans-serif;
+  font-weight: 100;
 }
 
 .hero-text {
@@ -207,6 +264,7 @@ body.cursor-hover .dot-cursor {
 
 .accent-bar {
   position: relative;
+  z-index: 60;
   width: 100%;
   height: clamp(64px, 10vh, 88px);
   background: var(--accent);
@@ -242,7 +300,7 @@ body.cursor-hover .dot-cursor {
 .social-name {
   font-size: clamp(32px, 7vw, 96px);
   line-height: 0.95;
-  font-weight: 700;
+  font-weight: 100;
   letter-spacing: 0.01em;
 }
 
