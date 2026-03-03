@@ -2,7 +2,6 @@
   --bg: #e8e8e8;
   --ink: #000000;
   --accent: #9aff00;
-  --nav-h: clamp(44px, 4.2vw, 62px);
 }
 
 * {
@@ -28,22 +27,21 @@ body {
   left: 0;
   z-index: 20;
   width: 100%;
-  height: var(--nav-h);
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   align-items: center;
-  padding: 0 16px;
-  background: var(--bg);
+  padding: 10px 16px 0;
   pointer-events: none;
 }
 
 .nav-link {
   pointer-events: auto;
-  color: var(--ink);
+  color: #fff;
   font-size: clamp(18px, 2vw, 40px);
   line-height: 1;
   text-decoration: none;
   text-underline-offset: 0.12em;
+  mix-blend-mode: difference;
 }
 
 .nav-link:first-child {
@@ -64,10 +62,10 @@ body {
 
 .page {
   min-height: 100vh;
-  padding-top: var(--nav-h);
 }
 
 .hero {
+  position: relative;
   height: clamp(300px, 44vh, 560px);
   min-height: 250px;
   max-height: 560px;
@@ -76,14 +74,14 @@ body {
 }
 
 .hero-logo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
   display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center 46%;
-  transform: scale(1.34);
-  transform-origin: center;
-  filter: invert(1);
+  width: 116vw;
+  height: auto;
+  max-width: none;
+  transform: translate(-50%, -49%);
 }
 
 .accent-bar {
@@ -99,15 +97,15 @@ body {
 
 @media (max-width: 1600px) and (min-width: 1201px) {
   .hero-logo {
-    transform: scale(1.42);
-    object-position: center 47%;
+    width: 124vw;
+    transform: translate(-50%, -49%);
   }
 }
 
 @media (max-width: 1200px) and (min-width: 901px) {
   .hero-logo {
-    transform: scale(1.52);
-    object-position: center 48%;
+    width: 140vw;
+    transform: translate(-50%, -49%);
   }
 }
 
@@ -126,7 +124,7 @@ body {
   }
 
   .hero-logo {
-    transform: scale(1.8);
-    object-position: center 50%;
+    width: 188vw;
+    transform: translate(-50%, -47%);
   }
 }
