@@ -236,7 +236,7 @@ body.works-anim-lock .dot-cursor {
 .nav-link {
   pointer-events: auto;
   color: #fff;
-  font-size: clamp(18px, 2vw, 40px);
+  font-size: clamp(24px, 2.8vw, 52px);
   line-height: 1;
   letter-spacing: -0.02em;
   text-decoration: none;
@@ -611,6 +611,7 @@ body.about-expand-lock {
 }
 
 .about-expand-overlay {
+  --about-accent: #9aff00;
   position: fixed;
   inset: 0;
   z-index: 1400;
@@ -621,7 +622,7 @@ body.about-expand-lock {
   position: fixed;
   background: #e8e8e8;
   border: 1px solid #000000;
-  overflow: visible;
+  overflow: hidden;
   pointer-events: auto;
   transition:
     top 680ms linear,
@@ -630,23 +631,140 @@ body.about-expand-lock {
     height 680ms linear;
 }
 
-.about-expand-title {
+.about-expand-left {
+  --about-expand-font-size: 40px;
   position: absolute;
+  z-index: 1;
+  background: transparent;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: block;
+  min-width: 0;
+  font-size: var(--about-expand-font-size);
+  transition:
+    top 680ms linear,
+    left 680ms linear,
+    width 680ms linear,
+    height 680ms linear,
+    font-size 680ms linear;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.about-expand-left::-webkit-scrollbar {
+  display: none;
+}
+
+.about-expand-title {
+  position: static;
   margin: 0;
+  font-size: 1em;
   line-height: 0.96;
   letter-spacing: -0.02em;
   font-family: Helvetica, Arial, sans-serif;
   font-weight: 100;
   color: #000000;
   white-space: nowrap;
-  transition:
-    top 680ms linear,
-    left 680ms linear,
-    font-size 680ms linear;
+}
+
+.about-expand-tags {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-items: flex-start;
+  align-content: flex-start;
+  gap: 0.14em;
+  font-size: 1em;
+  line-height: 1;
+}
+
+.about-pill {
+  display: inline-grid;
+  align-items: center;
+  justify-items: center;
+  overflow: hidden;
+  border: 1px solid #000000;
+  border-radius: 999px;
+  padding: 0;
+  height: 1em;
+  min-height: 1em;
+  max-height: 1em;
+  line-height: 1;
+  font-size: 1.25em; /* 撑满这个区域 */
+  font-weight: 100;
+  font-family: Helvetica, Arial, sans-serif;
+  background: transparent;
+}
+
+.about-pill-text {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  white-space: nowrap;
+}
+
+.about-pill-text-outline {
+  border-color: var(--about-accent);
+  color: #000000;
+  background: transparent;
+}
+
+.about-pill-text-solid {
+  color: #000000;
+  background: var(--about-accent);
+}
+
+.about-pill-main,
+.about-pill-hover,
+.about-pill-sizer {
+  grid-area: 1 / 1;
+  display: block;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  text-overflow: clip;
+  white-space: pre;
+  letter-spacing: -0.015em;
+  font-family: Helvetica, Arial, sans-serif;
+  text-align: left;
+  line-height: 1; /* 取消原先的 1.24 或者继承 */
+}
+
+.about-pill-sizer {
+  opacity: 0;
+  pointer-events: none;
+  font-size: 1em;
+  line-height: 1;
+  width: auto;
+  height: auto;
+  padding: 0;
+}
+
+.about-pill-main {
+  font-size: 1em;
+  line-height: 1;
+}
+
+.about-pill-hover {
+  font-family: "Helvetica Neue Condensed Bold", "Helvetica Condensed", Helvetica, Arial, sans-serif;
+  font-weight: bold;
+  font-stretch: condensed;
+  font-size: 1em;
+  line-height: 1;
+  white-space: nowrap;
+  opacity: 0.9;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
 }
 
 .about-expand-model {
   position: absolute;
+  z-index: 2;
   overflow: visible;
   background: transparent;
   transition:
@@ -660,6 +778,7 @@ body.about-expand-lock {
   width: 100%;
   height: 100%;
   min-height: 100%;
+  background: transparent;
   overflow: visible;
 }
 
@@ -673,6 +792,90 @@ body.about-expand-lock {
 
 .index-copy .hero-text {
   font-weight: 300;
+  font-size: clamp(32px, 4.6vw, 86px);
+}
+
+.hero-copy.index-copy {
+  padding: 0;
+}
+
+.hero-copy.index-copy .hero-text:nth-of-type(2) {
+  align-self: flex-end;
+  text-align: right;
+  margin-bottom: 0;
+}
+
+/* Remove default gap for index copy to control spacing tightly */
+.hero-copy.index-copy {
+  gap: 0;
+}
+
+.index-events {
+  margin-top: 0;
+  border-top: 4px solid #000000;
+  border-bottom: 4px solid #000000;
+  border-left: none;
+  border-right: none;
+  background: transparent;
+  width: 100%;
+}
+
+.events-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 2px solid #000000;
+  padding: 0;
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+}
+
+.events-label {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 700; /* Bold */
+  font-size: clamp(48px, 8vw, 120px);
+  transform: translateY(0.06em); /* Visual alignment for large type */
+}
+
+.events-month {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 400;
+  font-size: clamp(14px, 1.5vw, 20px);
+  letter-spacing: 0.02em;
+  margin-bottom: 4px; /* Tiny adjustment for baseline */
+}
+
+.events-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.event-item {
+  display: grid;
+  grid-template-columns: 1.2fr 2fr;
+  align-items: baseline;
+  gap: 20px;
+  border-bottom: 2px solid #000000;
+  padding: 0;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  line-height: 1.1;
+}
+
+.event-item:last-child {
+  border-bottom: none;
+}
+
+.event-date {
+  font-size: clamp(24px, 3vw, 42px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.event-desc {
+  font-size: clamp(24px, 3vw, 42px);
+  font-weight: 400; /* Bolder thin */ 
+  letter-spacing: -0.02em;
 }
 
 .wuxi-link {
@@ -736,7 +939,9 @@ body.about-expand-lock {
 .site-footer {
   background: #000000;
   color: #f2f2f2;
-  display: block;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto;
   padding: 0;
 }
 
@@ -765,12 +970,18 @@ body.about-expand-lock {
 }
 
 .footer-copy {
-  display: none;
+  margin: 0;
+  justify-self: start;
+  align-self: end;
+  font-size: clamp(32px, 7vw, 96px);
+  line-height: 0.95;
+  font-weight: 100;
+  letter-spacing: 0.01em;
 }
 
 @media (max-width: 900px) {
   .nav-link {
-    font-size: clamp(16px, 4.7vw, 24px);
+    font-size: clamp(20px, 6vw, 32px);
   }
 
   .hero-copy {
@@ -785,5 +996,97 @@ body.about-expand-lock {
 
   .hero-logo-svg {
     width: 100%;
+  }
+
+  .events-head {
+    font-size: clamp(14px, 3.5vw, 19px);
+  }
+}
+
+/* Works Blackout Content */
+.works-atlas-content {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 50%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 8vw 4vw;
+  color: #fff;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 1010;
+  /* Simple fade in for the container, content will type */
+  transition: opacity 0.4s ease;
+}
+
+.works-blackout-layer.is-run .works-atlas-content.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transition-delay: 0.2s;
+}
+
+.atlas-text-block {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  max-width: 720px;
+}
+
+.atlas-lead {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-weight: 400; /* Slightly bolder for visibility */
+  font-size: clamp(42px, 5vw, 80px); /* Bigger */
+  line-height: 1.05;
+  margin: 0;
+  letter-spacing: -0.03em;
+  /* Removed animations */
+  min-height: 1.1em; /* Prevent layout shift */
+}
+
+/* Fallback for font-weight: 100 on standard fonts */
+@supports not (font-weight: 100) {
+  .atlas-lead {
+    font-weight: 400;
+  }
+}
+
+.atlas-detail {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-weight: 300; /* Light */
+  font-size: clamp(20px, 1.6vw, 24px); /* Bigger */
+  line-height: 1.5;
+  max-width: 90%;
+  margin: 0;
+  color: #cccccc;
+  /* Removed animations */
+  min-height: 1.5em; /* Prevent layout shift */
+}
+
+.type-cursor::after {
+  content: "|";
+  display: inline-block;
+  color: var(--accent);
+  animation: blink-caret 1s step-end infinite;
+  margin-left: 2px;
+  font-weight: 400;
+}
+
+@keyframes blink-caret {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@media (max-width: 768px) {
+  .works-atlas-content {
+    width: 100%;
+    height: auto;
+    bottom: 0;
+    top: auto;
+    padding: 24px 24px 48px;
+    background: linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+    align-items: flex-end;
   }
 }

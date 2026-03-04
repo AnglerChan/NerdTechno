@@ -620,9 +620,247 @@
 
       let active = null;
       const durationMs = 680;
+      const personTagsByStageId = {
+        "haoxiang-model-stage": [
+          { text: "21M", typeLabel: "Age" },
+          { text: "Jiangnan University", typeLabel: "School" },
+          { text: "Artificial Intelligence", typeLabel: "Major" },
+          { text: "Sketch", typeLabel: "Tool" },
+          { text: "After Effects", typeLabel: "Tool" },
+          { text: "Cavalry", typeLabel: "Tool" },
+          { text: "Codex", typeLabel: "Tool" },
+          { text: "Logic Pro", typeLabel: "Tool" },
+          { text: "Final Cut Pro", typeLabel: "Tool" },
+          { text: "Godot", typeLabel: "Tool" },
+          { text: "Blender", typeLabel: "Tool" },
+          { text: "Graphic Design", typeLabel: "Skill" },
+          { text: "Motion Design", typeLabel: "Skill" },
+          { text: "Movie Editing", typeLabel: "Skill" },
+          { text: "Frontend Development", typeLabel: "Skill" },
+          { text: "UI/UX", typeLabel: "Skill" },
+          { text: "Product Design", typeLabel: "Skill" },
+          { text: "Shibuya-kei", typeLabel: "Interest" },
+          { text: "Apple", typeLabel: "Interest" }
+        ],
+        "haocheng-model-stage": [
+          { text: "20M", typeLabel: "Age" },
+          { text: "Jiangnan University", typeLabel: "School" },
+          { text: "Industrial Design", typeLabel: "Major" },
+          { text: "Logic Pro", typeLabel: "Tool" },
+          { text: "Reaper", typeLabel: "Tool" },
+          { text: "Aviutl", typeLabel: "Tool" },
+          { text: "CapCut", typeLabel: "Tool" },
+          { text: "Coding", typeLabel: "Skill" },
+          { text: "Music Theory", typeLabel: "Skill" },
+          { text: "Rearranging", typeLabel: "Skill" },
+          { text: "Acapella", typeLabel: "Skill" },
+          { text: "Farting", typeLabel: "Skill" },
+          { text: "Train", typeLabel: "Interest" },
+          { text: "Seafood", typeLabel: "Interest" },
+          { text: "Autism", typeLabel: "Interest" }
+        ]
+      };
+      const colorFamilies = [
+        { accent: "#9aff00" },
+        { accent: "#00d8ff" },
+        { accent: "#ff8a00" },
+        { accent: "#ff4d8d" },
+        { accent: "#7d7cff" }
+      ];
 
       const px = (value) => `${Math.round(value)}px`;
       const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+      const wait = (delay) => new Promise((resolve) => {
+        window.setTimeout(resolve, delay);
+      });
+      const pickColorFamily = () => colorFamilies[Math.floor(Math.random() * colorFamilies.length)];
+
+      const appendPill = (container, item, index) => {
+        const pill = document.createElement("span");
+        pill.className = "about-pill about-pill-text";
+        pill.dataset.fullText = item.text;
+        pill.dataset.typeLabel = item.typeLabel;
+
+        const isSolid = index % 2 === 0;
+        pill.classList.add(isSolid ? "about-pill-text-solid" : "about-pill-text-outline");
+
+        const sizer = document.createElement("span");
+        sizer.className = "about-pill-sizer";
+        sizer.textContent = item.text;
+        sizer.setAttribute("aria-hidden", "true");
+
+        const main = document.createElement("span");
+        main.className = "about-pill-main";
+        // Initially empty
+        main.textContent = "";
+
+        const hover = document.createElement("span");
+        hover.className = "about-pill-hover";
+
+        pill.appendChild(sizer);
+        pill.appendChild(main);
+        pill.appendChild(hover);
+        container.appendChild(pill);
+        return {
+          el: pill,
+          mainEl: main,
+          hoverEl: hover,
+          mainText: item.text,
+          typeLabel: item.typeLabel,
+          mode: "idle",
+          token: 0
+        };
+      };
+
+      const buildTagPills = (container, tags) => {
+        container.textContent = "";
+        return tags.map((tag, tagIndex) => appendPill(container, tag, tagIndex));
+      };
+
+      const typeText = async (el, text, speed, tokenRef, render) => {
+        for (let i = 0; i <= text.length; i += 1) {
+          if (tokenRef() === false) return;
+          render(el, text, i);
+          if (i < text.length) await wait(speed);
+        }
+      };
+
+      const eraseRightToLeft = async (el, text, speed, tokenRef) => {
+        for (let i = text.length; i >= 0; i -= 1) {
+          if (tokenRef() === false) return;
+          el.textContent = text.slice(0, i);
+          if (i > 0) await wait(speed);
+        }
+      };
+
+      const eraseLeftToRight = async (el, text, speed, tokenRef) => {
+        for (let i = 0; i <= text.length; i += 1) {
+          if (tokenRef() === false) return;
+          el.textContent = text.slice(i);
+          if (i < text.length) await wait(speed);
+        }
+      };
+
+      const buildHoverFillText = (pillState) => {
+        const rect = pillState.el.getBoundingClientRect();
+        const fontSize = parseFloat(window.getComputedStyle(pillState.hoverEl).fontSize || "12");
+        const charsPerLine = Math.max(6, Math.floor(rect.width / Math.max(1, fontSize * 0.48)) + 4);
+        const source = `${pillState.typeLabel} `.toUpperCase();
+        let line = "";
+        while (line.length < charsPerLine) line += source;
+        return line.slice(0, charsPerLine);
+      };
+
+      const stopPillAnimation = (pillState) => {
+        pillState.token += 1;
+      };
+
+      const animatePillEnter = async (pillState) => {
+        stopPillAnimation(pillState);
+        const token = pillState.token;
+        pillState.mode = "typing-main";
+        pillState.hoverEl.textContent = "";
+        await typeText(
+          pillState.mainEl,
+          pillState.mainText,
+          16,
+          () => pillState.token === token,
+          (el, full, len) => {
+            el.textContent = full.slice(0, len);
+          }
+        );
+        if (pillState.token !== token) return;
+        pillState.mode = "idle";
+      };
+
+      const animatePillExit = async (pillState) => {
+        stopPillAnimation(pillState);
+        const token = pillState.token;
+        pillState.mode = "closing";
+        pillState.hoverEl.textContent = "";
+        await eraseRightToLeft(pillState.mainEl, pillState.mainEl.textContent || "", 12, () => pillState.token === token);
+      };
+
+      const animatePillHoverIn = async (pillState) => {
+        stopPillAnimation(pillState);
+        const token = pillState.token;
+        pillState.mode = "hovering";
+        await eraseLeftToRight(pillState.mainEl, pillState.mainEl.textContent || pillState.mainText, 11, () => pillState.token === token);
+        if (pillState.token !== token) return;
+        const fillText = buildHoverFillText(pillState);
+        await typeText(
+          pillState.hoverEl,
+          fillText,
+          3,
+          () => pillState.token === token,
+          (el, full, len) => {
+            el.textContent = full.slice(0, len);
+          }
+        );
+        if (pillState.token !== token) return;
+        pillState.mode = "hovered";
+      };
+
+      const animatePillHoverOut = async (pillState) => {
+        stopPillAnimation(pillState);
+        const token = pillState.token;
+        pillState.mode = "unhovering";
+        await eraseLeftToRight(pillState.hoverEl, pillState.hoverEl.textContent || "", 3, () => pillState.token === token);
+        if (pillState.token !== token) return;
+        await typeText(
+          pillState.mainEl,
+          pillState.mainText,
+          11,
+          () => pillState.token === token,
+          (el, full, len) => {
+            el.textContent = full.slice(0, len);
+          }
+        );
+        if (pillState.token !== token) return;
+        pillState.mode = "idle";
+      };
+
+      const bindPillHover = (state) => {
+        state.pillStates.forEach((pillState) => {
+          const onEnter = () => {
+            if (!active || active !== state || active.isClosing) return;
+            animatePillHoverIn(pillState);
+          };
+          const onLeave = () => {
+            if (!active || active !== state || active.isClosing) return;
+            animatePillHoverOut(pillState);
+          };
+
+          pillState.el.addEventListener("pointerenter", onEnter);
+          pillState.el.addEventListener("pointerleave", onLeave);
+
+          state.pillHandlers.push({ pillState, onEnter, onLeave });
+        });
+      };
+
+      const unbindPillHover = (state) => {
+        state.pillHandlers.forEach(({ pillState, onEnter, onLeave }) => {
+          pillState.el.removeEventListener("pointerenter", onEnter);
+          pillState.el.removeEventListener("pointerleave", onLeave);
+          stopPillAnimation(pillState);
+        });
+        state.pillHandlers = [];
+      };
+
+      const runEnterTypewriter = async (state) => {
+        for (let i = 0; i < state.pillStates.length; i += 1) {
+          if (!active || active !== state || state.isClosing) return;
+          await animatePillEnter(state.pillStates[i]);
+          await wait(20);
+        }
+      };
+
+      const runExitTypewriter = async (state) => {
+        for (let i = state.pillStates.length - 1; i >= 0; i -= 1) {
+          await animatePillExit(state.pillStates[i]);
+          await wait(10);
+        }
+      };
 
       const buildExpandedState = (card) => {
         const stage = card.querySelector(".about-model-stage");
@@ -637,47 +875,65 @@
         overlay.className = "about-expand-overlay";
         const shell = document.createElement("div");
         shell.className = "about-expand-shell";
+        const leftPane = document.createElement("div");
+        leftPane.className = "about-expand-left";
         const titleEl = document.createElement("h2");
         titleEl.className = "about-expand-title";
         titleEl.innerHTML = title.innerHTML;
+        const tagsEl = document.createElement("div");
+        tagsEl.className = "about-expand-tags";
+        const pillStates = buildTagPills(tagsEl, personTagsByStageId[stage.id] || []);
         const modelBox = document.createElement("div");
         modelBox.className = "about-expand-model";
+        const colorFamily = pickColorFamily();
 
-        shell.appendChild(titleEl);
+        overlay.style.setProperty("--about-accent", colorFamily.accent);
+
+        leftPane.appendChild(titleEl);
+        leftPane.appendChild(tagsEl);
+        shell.appendChild(leftPane);
         shell.appendChild(modelBox);
         overlay.appendChild(shell);
 
+        const startFont = parseFloat(window.getComputedStyle(title).fontSize || "40");
         const start = {
           shellTop: cardRect.top,
           shellLeft: cardRect.left,
           shellWidth: cardRect.width,
           shellHeight: cardRect.height,
-          titleTop: titleRect.top - cardRect.top,
-          titleLeft: titleRect.left - cardRect.left,
-          titleSize: parseFloat(window.getComputedStyle(title).fontSize || "40"),
+          leftTop: titleRect.top - cardRect.top,
+          leftLeft: titleRect.left - cardRect.left,
+          leftWidth: Math.max(2, titleRect.width),
+          leftHeight: Math.max(2, titleRect.height),
+          leftFont: startFont,
           modelTop: stageRect.top - cardRect.top,
           modelLeft: stageRect.left - cardRect.left,
           modelWidth: stageRect.width,
           modelHeight: stageRect.height
         };
 
-        const pad = clamp(window.innerWidth * 0.024, 18, 38);
+        const pad = 0;
         const endModelWidth = clamp(window.innerWidth * 0.42, 260, 760);
+        const modelBleed = clamp(window.innerWidth * 0.018, 12, 28);
+        const endLeftWidth = window.innerWidth;
+        const endFont = clamp(window.innerWidth * 0.12, 78, 220);
         const end = {
           shellTop: 0,
           shellLeft: 0,
           shellWidth: window.innerWidth,
           shellHeight: window.innerHeight,
-          titleTop: pad,
-          titleLeft: pad,
-          titleSize: clamp(window.innerWidth * 0.12, 78, 220),
-          modelTop: 0,
-          modelLeft: window.innerWidth - endModelWidth,
-          modelWidth: endModelWidth,
-          modelHeight: window.innerHeight
+          leftTop: 0,
+          leftLeft: pad,
+          leftWidth: endLeftWidth,
+          leftHeight: window.innerHeight,
+          leftFont: endFont,
+          modelTop: -modelBleed,
+          modelLeft: window.innerWidth - endModelWidth - modelBleed,
+          modelWidth: endModelWidth + modelBleed * 2,
+          modelHeight: window.innerHeight + modelBleed * 2
         };
 
-        return { stage, overlay, shell, titleEl, modelBox, start, end };
+        return { stage, overlay, shell, leftPane, titleEl, tagsEl, modelBox, start, end, pillStates, pillHandlers: [] };
       };
 
       const applyState = (state, target) => {
@@ -686,18 +942,22 @@
         state.shell.style.left = px(data.shellLeft);
         state.shell.style.width = px(data.shellWidth);
         state.shell.style.height = px(data.shellHeight);
-        state.titleEl.style.top = px(data.titleTop);
-        state.titleEl.style.left = px(data.titleLeft);
-        state.titleEl.style.fontSize = px(data.titleSize);
+        state.leftPane.style.top = px(data.leftTop);
+        state.leftPane.style.left = px(data.leftLeft);
+        state.leftPane.style.width = px(data.leftWidth);
+        state.leftPane.style.height = px(data.leftHeight);
+        state.leftPane.style.setProperty("--about-expand-font-size", px(data.leftFont));
         state.modelBox.style.top = px(data.modelTop);
         state.modelBox.style.left = px(data.modelLeft);
         state.modelBox.style.width = px(data.modelWidth);
         state.modelBox.style.height = px(data.modelHeight);
       };
 
-      const closeExpanded = () => {
+      const closeExpanded = async () => {
         if (!active || active.isClosing) return;
         active.isClosing = true;
+        unbindPillHover(active);
+        await runExitTypewriter(active);
         applyState(active, "start");
         window.dispatchEvent(new CustomEvent("about-model-expand", {
           detail: { expanded: false, duration: durationMs, stageId: active.stage.id }
@@ -750,6 +1010,22 @@
             if (shellEvent.target === state.shell) closeExpanded();
           });
 
+          state.leftPane.addEventListener("click", (leftEvent) => {
+            let target = leftEvent.target;
+            if (!(target instanceof Element)) target = target?.parentElement || null;
+            if (!(target instanceof Element)) return;
+            if (target.closest(".about-pill")) return;
+            if (target.closest(".about-expand-title")) {
+              closeExpanded();
+              return;
+            }
+            if (target.closest(".about-expand-tags")) {
+              closeExpanded();
+              return;
+            }
+            if (target === state.leftPane) closeExpanded();
+          });
+
           active = {
             ...state,
             stageParent,
@@ -757,6 +1033,7 @@
             onEsc,
             isClosing: false
           };
+          bindPillHover(active);
 
           window.requestAnimationFrame(() => {
             if (!active) return;
@@ -765,6 +1042,10 @@
               detail: { expanded: true, duration: durationMs, stageId: active.stage.id }
             }));
             window.dispatchEvent(new Event("resize"));
+            window.setTimeout(() => {
+              if (!active || active.stage.id !== state.stage.id) return;
+              runEnterTypewriter(active);
+            }, durationMs + 20);
           });
         });
       });
@@ -789,7 +1070,8 @@
         {
           stageId: "haocheng-model-stage",
           idleUrl: "./assets/models/Haocheng_walking.fbx",
-          moveUrl: "./assets/models/Haocheng_dancing.fbx"
+          moveUrl: "./assets/models/Haocheng_dancing2.fbx",
+          clickUrl: "./assets/models/Haocheng_fall.fbx"
         }
       ];
       const activeConfigs = modelConfigs.filter((config) => document.querySelector(`#${config.stageId}`));
@@ -808,7 +1090,7 @@
         if (!stage) return null;
 
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 1200);
+        const camera = new THREE.PerspectiveCamera(34, 1, 0.01, 2400);
         camera.position.set(0, 74, 190);
 
         const renderer = new THREE.WebGLRenderer({
@@ -821,10 +1103,12 @@
         renderer.setClearColor(0x000000, 0);
         stage.appendChild(renderer.domElement);
 
-        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x5f5f5f, 1.2);
-        const keyLight = new THREE.DirectionalLight(0xffffff, 1.3);
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x7a7a7a, 1.5);
+        const keyLight = new THREE.DirectionalLight(0xffffff, 1.35);
         keyLight.position.set(100, 150, 90);
-        scene.add(hemiLight, keyLight);
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.66);
+        fillLight.position.set(-90, 80, -120);
+        scene.add(hemiLight, keyLight, fillLight);
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enablePan = false;
@@ -860,7 +1144,8 @@
         let currentAnimation = "idle";
         const actions = {
           idle: null,
-          move: null
+          move: null,
+          click: null
         };
         let expandState = {
           active: false,
@@ -879,9 +1164,11 @@
           pos: null,
           target: null
         };
+        let resizeUntil = 0;
 
         const animate = (now = performance.now()) => {
           if (disposed) return;
+          if (now < resizeUntil) resize();
           if (expandState.active && expandState.fromPos && expandState.toPos && expandState.fromTarget && expandState.toTarget) {
             const t = Math.min(1, Math.max(0, (now - expandState.startAt) / expandState.duration));
             camera.position.lerpVectors(expandState.fromPos, expandState.toPos, t);
@@ -897,10 +1184,12 @@
 
         const beginExpandTransition = (expanded, duration) => {
           if (!baseView.pos || !baseView.target || !expandedView.pos || !expandedView.target) return;
+          const durationSafe = Math.max(80, duration || 680);
+          resizeUntil = performance.now() + durationSafe + 120;
           expandState = {
             active: true,
             startAt: performance.now(),
-            duration: Math.max(80, duration || 680),
+            duration: durationSafe,
             fromPos: camera.position.clone(),
             fromTarget: controls.target.clone(),
             toPos: expanded ? expandedView.pos.clone() : baseView.pos.clone(),
@@ -915,6 +1204,20 @@
         const loadFbx = (url) => new Promise((resolve, reject) => {
           loader.load(url, resolve, undefined, reject);
         });
+        const normalizeMaterial = (material) => {
+          if (!material) return;
+          const hasColorMap = Boolean(material.map);
+          if (!hasColorMap && material.color) {
+            material.color.set(0xf2f2f2);
+          }
+          if ("metalness" in material) material.metalness = 0;
+          if ("roughness" in material) material.roughness = 0.88;
+          if ("emissive" in material) {
+            material.emissive.set(0x1a1a1a);
+            material.emissiveIntensity = 0.18;
+          }
+          material.needsUpdate = true;
+        };
 
         const playAnimation = (name) => {
           const next = actions[name];
@@ -947,13 +1250,15 @@
         };
 
         const onCanvasClick = (event) => {
-          if (!actions.idle || !actions.move) return;
+          if (!actions.idle) return;
           if (!pointerDownPoint) return;
           const move = Math.hypot(event.clientX - pointerDownPoint.x, event.clientY - pointerDownPoint.y);
           pointerDownPoint = null;
           if (move > 6) return;
           if (!pickModelHit(event)) return;
-          playAnimation(currentAnimation === "idle" ? "move" : "idle");
+          const clickActionName = actions.click ? "click" : "move";
+          if (!actions[clickActionName]) return;
+          playAnimation(currentAnimation === "idle" ? clickActionName : "idle");
         };
 
         const onCardPointerEnter = () => {
@@ -972,15 +1277,21 @@
         }
 
         try {
-          const [idleFbx, moveFbx] = await Promise.all([
+          const [idleFbx, moveFbx, clickFbx] = await Promise.all([
             loadFbx(config.idleUrl),
-            loadFbx(config.moveUrl).catch(() => null)
+            loadFbx(config.moveUrl).catch(() => null),
+            config.clickUrl ? loadFbx(config.clickUrl).catch(() => null) : Promise.resolve(null)
           ]);
 
           idleFbx.traverse((child) => {
             if (!child.isMesh) return;
             child.castShadow = false;
             child.receiveShadow = false;
+            if (Array.isArray(child.material)) {
+              child.material.forEach((material) => normalizeMaterial(material));
+            } else {
+              normalizeMaterial(child.material);
+            }
           });
 
           const baseBox = new THREE.Box3().setFromObject(idleFbx);
@@ -1008,12 +1319,12 @@
           expandedView = {
             pos: new THREE.Vector3(
               baseView.pos.x,
-              baseView.pos.y + finalSize.y * 0.08,
-              Math.max(80, baseView.pos.z * 0.62)
+              baseView.pos.y + finalSize.y * 0.06,
+              Math.max(110, baseView.pos.z * 0.72)
             ),
             target: new THREE.Vector3(
               baseView.target.x,
-              baseView.target.y + finalSize.y * 0.06,
+              baseView.target.y + finalSize.y * 0.03,
               baseView.target.z
             )
           };
@@ -1024,6 +1335,9 @@
           }
           if (moveFbx && moveFbx.animations && moveFbx.animations.length > 0) {
             actions.move = mixer.clipAction(moveFbx.animations[0]);
+          }
+          if (clickFbx && clickFbx.animations && clickFbx.animations.length > 0) {
+            actions.click = mixer.clipAction(clickFbx.animations[0]);
           }
 
           playAnimation("idle");

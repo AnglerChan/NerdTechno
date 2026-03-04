@@ -94,6 +94,15 @@
         <rect class="works-blackout-dash" x="36" y="496" width="34" height="8" />
       </svg>
     </button>
+    <div class="works-atlas-content" aria-hidden="true">
+      <div class="atlas-grid">
+        <div class="atlas-text-block">
+          <!-- Text content stored in data attributes for JS to use -->
+          <p class="atlas-lead" data-text="Atlas is a visual cataloging app for cities."></p>
+          <p class="atlas-detail" data-text="It records the small visual elements that shape urban environments — signs, objects, textures, and everyday details."></p>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -169,6 +178,7 @@
       let animating = false;
       let isLocked = false;
       let keyBlockBound = false;
+      let atlasTypeTimer = null; // Timer for Atlas typewriter
       const heroTypingStagger = prefersReducedMotion ? 0 : 14;
       const heroTypingRandomDelayRange = prefersReducedMotion ? 0 : 88;
       const heroTypingDurationBase = prefersReducedMotion ? 0 : 620;
@@ -289,6 +299,75 @@
           window.removeEventListener("wheel", blockInput, { capture: true });
           window.removeEventListener("touchmove", blockInput, { capture: true });
           keyBlockBound = false;
+        }
+      };
+
+      const runAtlasTypewriter = () => {
+        const lead = document.querySelector(".atlas-lead");
+        const detail = document.querySelector(".atlas-detail");
+        if (!lead || !detail) return;
+        
+        const leadText = lead.dataset.text || "";
+        const detailText = detail.dataset.text || "";
+
+        if (prefersReducedMotion) {
+           lead.textContent = leadText;
+           detail.textContent = detailText;
+           return;
+        }
+
+        // Reset
+        lead.textContent = "";
+        detail.textContent = "";
+        lead.classList.add("type-cursor");
+        detail.classList.remove("type-cursor");
+        
+        let currentElement = lead;
+        let currentText = leadText;
+        let charIndex = 0;
+
+        const typeNextChar = () => {
+             if (charIndex < currentText.length) {
+                 currentElement.textContent += currentText.charAt(charIndex);
+                 charIndex++;
+                 // Randomize typing speed for realism (30-80ms)
+                 const delay = 35 + Math.random() * 45;
+                 atlasTypeTimer = window.setTimeout(typeNextChar, delay);
+             } else {
+                 // Finished current element
+                 if (currentElement === lead) {
+                     currentElement.classList.remove("type-cursor");
+                     currentElement = detail;
+                     currentText = detailText;
+                     charIndex = 0;
+                     currentElement.classList.add("type-cursor");
+                     // Pause before next line
+                     atlasTypeTimer = window.setTimeout(typeNextChar, 400); 
+                 } else {
+                     // All done
+                     // Keep cursor blinking for a moment then remove
+                     window.setTimeout(() => {
+                        currentElement.classList.remove("type-cursor");
+                     }, 2000);
+                 }
+             }
+        };
+
+        typeNextChar();
+      };
+
+
+      const resetAtlasTypewriter = () => {
+        window.clearTimeout(atlasTypeTimer);
+        const lead = document.querySelector(".atlas-lead");
+        const detail = document.querySelector(".atlas-detail");
+        if (lead) {
+            lead.textContent = "";
+            lead.classList.remove("type-cursor");
+        }
+        if (detail) {
+            detail.textContent = "";
+            detail.classList.remove("type-cursor");
         }
       };
 
@@ -434,6 +513,12 @@
 
         pushTimer(() => {
           runBlackout();
+          const atlasContent = document.querySelector(".works-atlas-content");
+          if (atlasContent) {
+            atlasContent.classList.toggle("is-visible", clickedIndex === 0);
+            atlasContent.setAttribute("aria-hidden", clickedIndex === 0 ? "false" : "true");
+          }
+
           if (prefersReducedMotion || !blackoutLayer) {
             unlockInteraction();
             animating = false;
@@ -444,6 +529,11 @@
             blackoutLayer.removeEventListener("animationend", handleBlackoutEnd);
             unlockInteraction();
             animating = false;
+            
+            if (clickedIndex === 0) {
+               // Initial delay before start typing after blackout settled
+               window.setTimeout(runAtlasTypewriter, 300);
+            }
           };
           blackoutLayer.addEventListener("animationend", handleBlackoutEnd);
         }, entranceAfterHeroStart);
@@ -451,6 +541,17 @@
 
       blackoutBack?.addEventListener("click", () => {
         hideBlackout();
+        const atlasContent = document.querySelector(".works-atlas-content");
+        if (atlasContent) {
+          atlasContent.classList.remove("is-visible");
+          atlasContent.setAttribute("aria-hidden", "true");
+          // Abort Typewriter
+          window.clearTimeout(atlasTypeTimer);
+          const lead = document.querySelector(".atlas-lead");
+          const detail = document.querySelector(".atlas-detail");
+          if (lead) { lead.textContent = ""; lead.classList.remove("type-cursor"); }
+          if (detail) { detail.textContent = ""; detail.classList.remove("type-cursor"); }
+        }
         heroFillLayer.textContent = "";
         resetState();
         unlockInteraction();
