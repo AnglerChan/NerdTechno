@@ -417,8 +417,8 @@ body.works-anim-lock .dot-cursor {
   position: relative;
   z-index: 2;
   font-family: Helvetica, Arial, sans-serif;
-  font-size: calc(var(--works-row-h) * 1.06);
-  line-height: 0.82;
+  font-size: calc(var(--works-row-h) * 0.96);
+  line-height: 0.92;
   font-weight: 100;
   letter-spacing: -0.1em;
   white-space: nowrap;
@@ -445,8 +445,8 @@ body.works-anim-lock .dot-cursor {
   display: block;
   white-space: nowrap;
   font-family: Helvetica, Arial, sans-serif;
-  font-size: calc(var(--works-row-h) * 1.06);
-  line-height: 0.82;
+  font-size: calc(var(--works-row-h) * 0.96);
+  line-height: 0.92;
   font-weight: 100;
   letter-spacing: -0.1em;
   color: #ffffff;
@@ -683,7 +683,7 @@ body.about-expand-lock {
   position: static;
   margin: 0;
   font-size: 1em;
-  line-height: 0.96;
+  line-height: 1; /* Match .about-card line-height: 1 */
   letter-spacing: -0.1em;
   font-family: Helvetica, Arial, sans-serif;
   font-weight: 100;
@@ -699,7 +699,7 @@ body.about-expand-lock {
   justify-content: flex-start;
   align-items: flex-start;
   align-content: flex-start;
-  gap: 0.14em;
+  gap: 0;
   font-size: 1em;
   line-height: 1;
 }
