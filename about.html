@@ -681,7 +681,13 @@
         pill.dataset.fullText = item.text;
         pill.dataset.typeLabel = item.typeLabel;
 
-        const isSolid = index % 2 === 0;
+        let isSolid = index % 2 === 0;
+        if (item.forceSolid !== undefined) {
+           isSolid = item.forceSolid;
+        } else if (item.forceOutline !== undefined) {
+           isSolid = !item.forceOutline;
+        }
+
         pill.classList.add(isSolid ? "about-pill-text-solid" : "about-pill-text-outline");
 
         const sizer = document.createElement("span");
@@ -714,7 +720,40 @@
 
       const buildTagPills = (container, tags) => {
         container.textContent = "";
-        return tags.map((tag, tagIndex) => appendPill(container, tag, tagIndex));
+        const allPillsData = [];
+
+        tags.forEach((tag, idx) => {
+          const words = tag.text.split(" ");
+          words.forEach((word, wIdx) => {
+            allPillsData.push({ text: word, typeLabel: tag.typeLabel });
+            // Insert hollow separator between words of the same tag
+            if (wIdx < words.length - 1) {
+              const spaceCount = Math.floor(Math.random() * 3) + 1; // 1 to 3 spaces
+              allPillsData.push({ 
+                text: " ".repeat(spaceCount), 
+                typeLabel: " ", 
+                forceOutline: true 
+              });
+            }
+          });
+
+          // "随机稀疏插入" - strictly sparse random insertion between different tags
+          if (idx < tags.length - 1) {
+            // e.g., 30% chance to insert an extra separator between completely different tags
+            if (Math.random() < 0.3) {
+              const spaceCount = Math.floor(Math.random() * 3) + 1;
+              const beSolid = Math.random() > 0.5;
+              allPillsData.push({ 
+                text: " ".repeat(spaceCount), 
+                typeLabel: " ", 
+                forceSolid: beSolid, 
+                forceOutline: !beSolid 
+              });
+            }
+          }
+        });
+
+        return allPillsData.map((data, index) => appendPill(container, data, index));
       };
 
       const typeText = async (el, text, speed, tokenRef, render) => {
@@ -733,13 +772,17 @@
         }
       };
 
-      const eraseLeftToRight = async (el, text, speed, tokenRef) => {
-        for (let i = 0; i <= text.length; i += 1) {
-          if (tokenRef() === false) return;
-          el.textContent = text.slice(i);
-          if (i < text.length) await wait(speed);
-        }
-      };
+  async function eraseLeftToRight(el, text, speed, tokenRef) {
+    for (let i = 0; i <= text.length; i += 1) {
+      if (tokenRef() === false) return;
+      const hiddenPart = text.slice(0, i);
+      const visiblePart = text.slice(i);
+      // We use a transparent, pointer-event-none span to hold the erased part's layout space
+      el.innerHTML = `<span style="opacity:0; pointer-events:none;">${hiddenPart}</span>${visiblePart}`;
+      if (i < text.length) await wait(speed);
+    }
+    el.innerHTML = '';
+  }
 
       const buildHoverFillText = (pillState) => {
         const rect = pillState.el.getBoundingClientRect();
@@ -785,7 +828,8 @@
         stopPillAnimation(pillState);
         const token = pillState.token;
         pillState.mode = "hovering";
-        await eraseLeftToRight(pillState.mainEl, pillState.mainEl.textContent || pillState.mainText, 11, () => pillState.token === token);
+        // Erase the main text from left to right.
+        await eraseLeftToRight(pillState.mainEl, pillState.mainText, 11, () => pillState.token === token);
         if (pillState.token !== token) return;
         const fillText = buildHoverFillText(pillState);
         await typeText(
@@ -805,7 +849,8 @@
         stopPillAnimation(pillState);
         const token = pillState.token;
         pillState.mode = "unhovering";
-        await eraseLeftToRight(pillState.hoverEl, pillState.hoverEl.textContent || "", 3, () => pillState.token === token);
+        // To prevent text shifting, hover text should also erase visually left to right without collapsing bounding box.
+        await eraseLeftToRight(pillState.hoverEl, pillState.hoverEl.textContent || pillState.hoverEl.innerText || "", 3, () => pillState.token === token);
         if (pillState.token !== token) return;
         await typeText(
           pillState.mainEl,
@@ -956,8 +1001,33 @@
       const closeExpanded = async () => {
         if (!active || active.isClosing) return;
         active.isClosing = true;
+        
+        // Force stop animations immediately
         unbindPillHover(active);
-        await runExitTypewriter(active);
+        
+        // Skip runExitTypewriter(active), just clear text instantly 
+        active.pillStates.forEach((pillState) => {
+            pillState.token += 1;
+            pillState.mainEl.textContent = "";
+            pillState.hoverEl.textContent = "";
+        });
+
+        // Revert Scroll Mode before animating back
+        if (active.shell) {
+            active.shell.scrollTop = 0;
+            active.shell.style.overflowY = "hidden";
+        }
+        if (active.leftPane) {
+            active.leftPane.style.position = "absolute";
+            active.leftPane.style.overflow = "hidden";
+            active.leftPane.style.minHeight = "auto";
+        }
+        if (active.modelBox) {
+            active.modelBox.style.position = "absolute";
+            active.modelBox.style.right = "";
+            active.modelBox.style.left = "";
+        }
+
         applyState(active, "start");
         window.dispatchEvent(new CustomEvent("about-model-expand", {
           detail: { expanded: false, duration: durationMs, stageId: active.stage.id }
@@ -1044,6 +1114,26 @@
             window.dispatchEvent(new Event("resize"));
             window.setTimeout(() => {
               if (!active || active.stage.id !== state.stage.id) return;
+              
+              // Enable Scroll Mode
+              active.shell.style.overflowY = "auto";
+              active.shell.style.overflowX = "hidden";
+              active.leftPane.style.position = "relative";
+              active.leftPane.style.height = "auto";
+              active.leftPane.style.minHeight = "100%";
+              active.leftPane.style.width = "100%";
+              active.leftPane.style.top = "0px";
+              active.leftPane.style.left = "0px";
+              active.leftPane.style.overflow = "visible";
+
+              // Keep model fixed on screen so it doesn't scroll away
+              // Calculate right gap based on initial layout logic so it sticks to right edge even on resize
+              const rightGap = active.end.shellWidth - (active.end.modelLeft + active.end.modelWidth);
+              active.modelBox.style.right = rightGap + "px";
+              active.modelBox.style.left = "auto";
+              active.modelBox.style.position = "fixed";
+              active.modelBox.style.marginTop = "0px"; 
+
               runEnterTypewriter(active);
             }, durationMs + 20);
           });
@@ -1051,16 +1141,20 @@
       });
     })();
   </script>
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
-      }
-    }
-  </script>
   <script type="module">
     (async () => {
+      const markModelError = (stage, error) => {
+        if (!stage) return;
+        stage.classList.add("is-model-error");
+        if (!stage.querySelector(".model-error-tip")) {
+          const tip = document.createElement("p");
+          tip.className = "model-error-tip";
+          tip.textContent = "3D unavailable";
+          stage.appendChild(tip);
+        }
+        if (error) console.error("3D model failed:", error);
+      };
+
       const modelConfigs = [
         {
           stageId: "haoxiang-model-stage",
@@ -1076,12 +1170,37 @@
       ];
       const activeConfigs = modelConfigs.filter((config) => document.querySelector(`#${config.stageId}`));
       if (activeConfigs.length === 0) return;
+      const stageLoadState = new Map(activeConfigs.map((config) => [config.stageId, false]));
+      const revealStagesWhenReady = () => {
+        const allDone = Array.from(stageLoadState.values()).every(Boolean);
+        if (!allDone) return;
+        activeConfigs.forEach((config) => {
+          const stageEl = document.querySelector(`#${config.stageId}`);
+          if (stageEl) stageEl.classList.remove("is-preload");
+        });
+      };
+      activeConfigs.forEach((config) => {
+        const stageEl = document.querySelector(`#${config.stageId}`);
+        if (stageEl) stageEl.classList.add("is-preload");
+      });
 
-      const [THREE, { OrbitControls }, { FBXLoader }] = await Promise.all([
-        import("three"),
-        import("three/addons/controls/OrbitControls.js"),
-        import("three/addons/loaders/FBXLoader.js")
-      ]);
+      let THREE;
+      let OrbitControls;
+      let FBXLoader;
+      try {
+        [THREE, { OrbitControls }, { FBXLoader }] = await Promise.all([
+          import("./assets/vendor/three/build/three.module.js"),
+          import("./assets/vendor/three/examples/jsm/controls/OrbitControls.js"),
+          import("./assets/vendor/three/examples/jsm/loaders/FBXLoader.js")
+        ]);
+      } catch (error) {
+        activeConfigs.forEach((config) => {
+          const stageEl = document.querySelector(`#${config.stageId}`);
+          markModelError(stageEl, error);
+          if (stageEl) stageEl.classList.remove("is-preload");
+        });
+        return;
+      }
 
       const disposers = [];
 
@@ -1343,8 +1462,10 @@
           playAnimation("idle");
           stage.classList.add("is-ready");
         } catch (error) {
-          stage.classList.add("is-model-error");
+          markModelError(stage, error);
         }
+        stageLoadState.set(config.stageId, true);
+        revealStagesWhenReady();
 
         const onExpandEvent = (event) => {
           const detail = event.detail || {};

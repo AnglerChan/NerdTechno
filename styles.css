@@ -66,6 +66,7 @@ body {
   color: var(--ink);
   font-family: Helvetica, Arial, sans-serif;
   font-weight: 300;
+  letter-spacing: -0.1em;
 }
 
 body.custom-cursor,
@@ -176,7 +177,7 @@ body.works-anim-lock .dot-cursor {
 
 .works-blackout-layer.is-leave {
   pointer-events: none;
-  animation: works-blackout-out 420ms linear forwards;
+  animation: works-blackout-out 640ms linear forwards;
 }
 
 .works-blackout-back {
@@ -238,7 +239,7 @@ body.works-anim-lock .dot-cursor {
   color: #fff;
   font-size: clamp(24px, 2.8vw, 52px);
   line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.1em;
   text-decoration: none;
   text-underline-offset: 0.12em;
 }
@@ -313,7 +314,7 @@ body.works-anim-lock .dot-cursor {
   color: #111111;
   font-family: Helvetica, Arial, sans-serif;
   font-weight: 300;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.1em;
   line-height: 0.82;
   transform: translateX(var(--hero-shift, 0ch));
   clip-path: inset(0 100% 0 0);
@@ -343,7 +344,7 @@ body.works-anim-lock .dot-cursor {
   line-height: 1;
   white-space: nowrap;
   opacity: 0;
-  letter-spacing: normal;
+  letter-spacing: -0.1em;
   will-change: transform, opacity;
 }
 
@@ -419,7 +420,7 @@ body.works-anim-lock .dot-cursor {
   font-size: calc(var(--works-row-h) * 1.06);
   line-height: 0.82;
   font-weight: 100;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.1em;
   white-space: nowrap;
   color: #ffffff;
   -webkit-text-fill-color: #ffffff;
@@ -447,7 +448,7 @@ body.works-anim-lock .dot-cursor {
   font-size: calc(var(--works-row-h) * 1.06);
   line-height: 0.82;
   font-weight: 100;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.1em;
   color: #ffffff;
   -webkit-text-fill-color: #ffffff;
   transform: translateX(var(--fill-shift, 0ch));
@@ -562,7 +563,7 @@ body.works-anim-lock .dot-cursor {
   justify-content: flex-start;
   font-size: clamp(34px, 4.2vw, 88px);
   line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.1em;
   font-family: Helvetica, Arial, sans-serif;
   font-weight: 100;
 }
@@ -586,9 +587,13 @@ body.works-anim-lock .dot-cursor {
   width: 100%;
   flex: 1;
   min-height: 0;
-  touch-action: none;
+  touch-action: pan-y !important; /* Allow vertical scroll even over model */
   background: transparent;
   overflow: hidden;
+}
+
+.about-model-stage.is-preload {
+  opacity: 0;
 }
 
 body.custom-cursor .about-model-stage,
@@ -604,6 +609,25 @@ body.custom-cursor .about-model-stage * {
 
 .about-model-stage.is-model-error {
   background: #d7d7d7;
+  display: grid;
+  place-items: center;
+}
+
+.about-model-stage.is-ready,
+.about-model-stage.is-model-error {
+  opacity: 1;
+  transition: opacity 160ms linear;
+}
+
+.model-error-tip {
+  margin: 0;
+  padding: 0 12px;
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: -0.1em;
+  text-transform: uppercase;
+  color: #1a1a1a;
+  font-family: Helvetica, Arial, sans-serif;
 }
 
 body.about-expand-lock {
@@ -660,7 +684,7 @@ body.about-expand-lock {
   margin: 0;
   font-size: 1em;
   line-height: 0.96;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.1em;
   font-family: Helvetica, Arial, sans-serif;
   font-weight: 100;
   color: #000000;
@@ -691,6 +715,7 @@ body.about-expand-lock {
   height: 1em;
   min-height: 1em;
   max-height: 1em;
+  max-width: 100%; /* 防止超长单词溢出屏幕 */
   line-height: 1;
   font-size: 1.25em; /* 撑满这个区域 */
   font-weight: 100;
@@ -717,9 +742,10 @@ body.about-expand-lock {
 }
 
 .about-pill-main,
-.about-pill-hover,
-.about-pill-sizer {
-  grid-area: 1 / 1;
+.about-pill-hover {
+  position: absolute;
+  top: 0;
+  left: 0;
   display: block;
   min-width: 0;
   width: 100%;
@@ -727,19 +753,28 @@ body.about-expand-lock {
   height: 100%;
   text-overflow: clip;
   white-space: pre;
-  letter-spacing: -0.015em;
+  letter-spacing: -0.1em; /* 缩小间距10% */
   font-family: Helvetica, Arial, sans-serif;
   text-align: left;
-  line-height: 1; /* 取消原先的 1.24 或者继承 */
+  line-height: 1;
 }
 
 .about-pill-sizer {
+  grid-area: 1 / 1;
+  display: block;
+  min-width: 0;
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  text-overflow: clip;
+  white-space: pre;
+  letter-spacing: -0.1em; /* 缩小间距同步 */
+  font-family: Helvetica, Arial, sans-serif;
+  text-align: left;
+  line-height: 1;
   opacity: 0;
   pointer-events: none;
   font-size: 1em;
-  line-height: 1;
-  width: auto;
-  height: auto;
   padding: 0;
 }
 
@@ -787,7 +822,7 @@ body.about-expand-lock {
   font-size: clamp(24px, 3.4vw, 60px);
   line-height: 0.94;
   font-weight: 500;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.1em;
 }
 
 .index-copy .hero-text {
@@ -812,7 +847,7 @@ body.about-expand-lock {
 
 .index-events {
   margin-top: 0;
-  border-top: 4px solid #000000;
+  border-top: none;
   border-bottom: 4px solid #000000;
   border-left: none;
   border-right: none;
@@ -828,7 +863,7 @@ body.about-expand-lock {
   border-bottom: 2px solid #000000;
   padding: 0;
   line-height: 0.85;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.1em;
 }
 
 .events-label {
@@ -836,13 +871,14 @@ body.about-expand-lock {
   font-weight: 700; /* Bold */
   font-size: clamp(48px, 8vw, 120px);
   transform: translateY(0.06em); /* Visual alignment for large type */
+  margin-left: -0.07em; /* optical trim for left side-bearing */
 }
 
 .events-month {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: 400;
   font-size: clamp(14px, 1.5vw, 20px);
-  letter-spacing: 0.02em;
+  letter-spacing: -0.1em;
   margin-bottom: 4px; /* Tiny adjustment for baseline */
 }
 
@@ -869,13 +905,13 @@ body.about-expand-lock {
 .event-date {
   font-size: clamp(24px, 3vw, 42px);
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.1em;
 }
 
 .event-desc {
   font-size: clamp(24px, 3vw, 42px);
   font-weight: 400; /* Bolder thin */ 
-  letter-spacing: -0.02em;
+  letter-spacing: -0.1em;
 }
 
 .wuxi-link {
@@ -960,7 +996,7 @@ body.about-expand-lock {
   font-size: clamp(32px, 7vw, 96px);
   line-height: 0.95;
   font-weight: 100;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.1em;
 }
 
 .social-arrow {
@@ -976,7 +1012,7 @@ body.about-expand-lock {
   font-size: clamp(32px, 7vw, 96px);
   line-height: 0.95;
   font-weight: 100;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.1em;
 }
 
 @media (max-width: 900px) {
@@ -1041,7 +1077,7 @@ body.about-expand-lock {
   font-size: clamp(42px, 5vw, 80px); /* Bigger */
   line-height: 1.05;
   margin: 0;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.1em;
   /* Removed animations */
   min-height: 1.1em; /* Prevent layout shift */
 }
