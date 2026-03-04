@@ -4,6 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>NerdTechno</title>
+  <script>
+    (function () {
+      const ua = navigator.userAgent || "";
+      const mobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(ua);
+      const update = () => {
+        const smallViewport = window.matchMedia("(max-width: 900px)").matches;
+        document.documentElement.classList.toggle("is-mobile-blocked", mobileUA && smallViewport);
+      };
+      update();
+      window.addEventListener("resize", update);
+    })();
+  </script>
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="shortcut icon" href="/favicon.ico" />
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
@@ -13,6 +25,20 @@
   <link rel="stylesheet" href="./styles.css?v=6" />
 </head>
 <body>
+  <section class="mobile-desktop-notice" aria-label="Desktop Mode Required">
+    <div class="mobile-desktop-notice-inner">
+      <div class="mobile-desktop-notice-nav" aria-hidden="true">
+        <span>INDEX</span>
+        <span>WORKS</span>
+        <span>ABOUT</span>
+      </div>
+      <div class="mobile-desktop-notice-bar" aria-hidden="true"></div>
+      <div class="mobile-desktop-notice-copy">
+        <p class="mobile-desktop-notice-title">Desktop Mode Required</p>
+        <p class="mobile-desktop-notice-text">This website works properly only in desktop mode.</p>
+      </div>
+    </div>
+  </section>
   <header class="site-nav">
     <a class="nav-link" href="./index.html">INDEX</a>
     <a class="nav-link is-active" href="./works.html" aria-current="page">WORKS</a>
@@ -187,6 +213,8 @@
       const worksTypingRandomDelayRange = prefersReducedMotion ? 0 : 12;
       const worksTypingDurationBase = prefersReducedMotion ? 0 : 150;
       const worksTypingDurationRange = prefersReducedMotion ? 0 : 70;
+      const blackoutDuration = prefersReducedMotion ? 0 : 640;
+      let blackoutMotionFrame = 0;
 
       const blockInput = (event) => {
         event.preventDefault();
@@ -202,6 +230,46 @@
       const pushTimer = (callback, ms) => {
         const id = window.setTimeout(callback, ms);
         timers.push(id);
+      };
+
+      const emitBlackoutProgress = (direction, progress, done = false) => {
+        window.dispatchEvent(new CustomEvent("works:blackout-progress", {
+          detail: {
+            direction,
+            progress: Math.max(0, Math.min(1, progress)),
+            done
+          }
+        }));
+      };
+
+      const stopBlackoutProgress = () => {
+        if (!blackoutMotionFrame) return;
+        window.cancelAnimationFrame(blackoutMotionFrame);
+        blackoutMotionFrame = 0;
+      };
+
+      const runBlackoutProgress = (direction) => {
+        stopBlackoutProgress();
+
+        if (blackoutDuration <= 0) {
+          emitBlackoutProgress(direction, 1, true);
+          return;
+        }
+
+        const start = performance.now();
+        const tick = (now) => {
+          const elapsed = now - start;
+          const progress = Math.min(1, elapsed / blackoutDuration);
+          emitBlackoutProgress(direction, progress, progress >= 1);
+
+          if (progress < 1) {
+            blackoutMotionFrame = window.requestAnimationFrame(tick);
+          } else {
+            blackoutMotionFrame = 0;
+          }
+        };
+
+        blackoutMotionFrame = window.requestAnimationFrame(tick);
       };
 
       const estimateChars = (widthPx, fontPx) => {
@@ -424,12 +492,14 @@
         blackoutLayer.classList.remove("is-run");
         void blackoutLayer.offsetWidth;
         blackoutLayer.classList.add("is-run");
+        runBlackoutProgress("in");
       };
 
       const hideBlackout = () => {
         if (!blackoutLayer) return;
         blackoutLayer.classList.remove("is-run");
         blackoutLayer.classList.add("is-leave");
+        runBlackoutProgress("out");
       };
 
       items.forEach((item) => {
@@ -665,6 +735,11 @@
       const snakes = [];
       let spawnTimer = 0;
       const maxActiveSnakes = 1;
+      const blackoutPush = {
+        direction: "out",
+        progress: 0,
+        frontProgress: 0
+      };
 
       const refreshBounds = () => {
         const viewHeight = svg.viewBox.baseVal.height || 2713;
@@ -819,7 +894,7 @@
       const createSnake = () => {
         if (!typerLayer) return;
         if (snakes.length >= maxActiveSnakes) return;
-        const candidates = states.filter((state) => !state.isDropped && state.track);
+        const candidates = states.filter((state) => state.track);
         if (candidates.length === 0) return;
 
         const state = candidates[Math.floor(Math.random() * candidates.length)];
@@ -868,7 +943,7 @@
         for (let i = snakes.length - 1; i >= 0; i -= 1) {
           const snake = snakes[i];
           const state = snake.state;
-          if (!state.track || state.isDropped) {
+          if (!state.track) {
             snake.wrapper.remove();
             snakes.splice(i, 1);
             continue;
@@ -946,25 +1021,86 @@
       const bounce = 0.26;
       const floorFriction = 0.86;
       let prevNow = performance.now();
+      const frontStart = -0.1;
+      const frontEnd = 1.1;
+      const frontTravel = frontEnd - frontStart;
+      let prevFrontX = frontStart * viewBox.width;
+
+      const onBlackoutProgress = (event) => {
+        const detail = event.detail;
+        if (!detail) return;
+        blackoutPush.direction = detail.direction === "in" ? "in" : "out";
+        blackoutPush.progress = Math.max(0, Math.min(1, Number(detail.progress) || 0));
+      };
+
+      window.addEventListener("works:blackout-progress", onBlackoutProgress);
 
       const animate = (now) => {
         const time = (now - start) * 0.001;
         const dtMs = Math.min(40, now - prevNow);
         prevNow = now;
+        const dt = Math.max(0.001, dtMs / 1000);
+
+        if (blackoutPush.direction === "in") {
+          blackoutPush.frontProgress = blackoutPush.progress;
+        } else {
+          blackoutPush.frontProgress = 0;
+        }
+
+        const frontX = (frontStart + blackoutPush.frontProgress * frontTravel) * viewBox.width;
+        const frontSpeed = (frontX - prevFrontX) / dt;
+        prevFrontX = frontX;
+        const frontIsActive = blackoutPush.direction === "in" && blackoutPush.frontProgress > 0;
+        const isReturnPhase = blackoutPush.direction === "out" && blackoutPush.progress < 1;
 
         states.forEach((state) => {
           if (!state.isDropped) {
             const targetX = Math.sin(time * state.fx + state.px) * state.ax;
             const targetY = Math.cos(time * state.fy + state.py) * state.ay;
             const targetR = Math.sin(time * state.fr + state.pr) * state.ar;
+            let springX = spring;
+            let stateSpring = spring;
+            let stateSpringR = springR;
+            let stateDamping = damping;
+            let stateDampingR = dampingR;
 
-            state.vx += (targetX - state.x) * spring;
-            state.vy += (targetY - state.y) * spring;
-            state.vr += (targetR - state.r) * springR;
+            if (isReturnPhase) {
+              springX *= 0.2;
+              stateSpring *= 0.28;
+              stateSpringR *= 0.34;
+              stateDamping = 0.955;
+              stateDampingR = 0.94;
+            }
 
-            state.vx *= damping;
-            state.vy *= damping;
-            state.vr *= dampingR;
+            if (frontIsActive) {
+              const leftEdge = state.cx + state.x - state.radius * state.s * 0.9;
+              const penetration = frontX - leftEdge;
+              const frontGap = frontX - (state.cx + state.x);
+
+              if (frontGap > -state.radius * 0.8) {
+                springX *= 0.32;
+              }
+
+              if (penetration > 0) {
+                const pressure = Math.min(0.95, penetration / Math.max(34, state.radius * 0.95));
+                const frontImpulse = 0.078 * pressure + Math.max(0, frontSpeed) * 0.00034;
+                const lever = (state.cy + state.y - viewBox.height * 0.5) / Math.max(1, viewBox.height * 0.5);
+                const spinDir = lever === 0 ? (state.index % 2 === 0 ? 1 : -1) : Math.sign(lever);
+
+                state.x += penetration * 0.34;
+                state.vx = state.vx * 0.7 + frontImpulse;
+                state.vy += Math.sin(time * 6.4 + state.index * 1.3) * 0.008 * pressure;
+                state.vr += (0.011 + state.index * 0.0018) * pressure * spinDir;
+              }
+            }
+
+            state.vx += (targetX - state.x) * springX;
+            state.vy += (targetY - state.y) * stateSpring;
+            state.vr += (targetR - state.r) * stateSpringR;
+
+            state.vx *= stateDamping;
+            state.vy *= stateDamping;
+            state.vr *= stateDampingR;
 
             state.x += state.vx;
             state.y += state.vy;

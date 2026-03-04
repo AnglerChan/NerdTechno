@@ -4,6 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>NerdTechno</title>
+  <script>
+    (function () {
+      const ua = navigator.userAgent || "";
+      const mobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(ua);
+      const update = () => {
+        const smallViewport = window.matchMedia("(max-width: 900px)").matches;
+        document.documentElement.classList.toggle("is-mobile-blocked", mobileUA && smallViewport);
+      };
+      update();
+      window.addEventListener("resize", update);
+    })();
+  </script>
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="shortcut icon" href="/favicon.ico" />
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
@@ -13,6 +25,20 @@
   <link rel="stylesheet" href="./styles.css?v=6" />
 </head>
 <body>
+  <section class="mobile-desktop-notice" aria-label="Desktop Mode Required">
+    <div class="mobile-desktop-notice-inner">
+      <div class="mobile-desktop-notice-nav" aria-hidden="true">
+        <span>INDEX</span>
+        <span>WORKS</span>
+        <span>ABOUT</span>
+      </div>
+      <div class="mobile-desktop-notice-bar" aria-hidden="true"></div>
+      <div class="mobile-desktop-notice-copy">
+        <p class="mobile-desktop-notice-title">Desktop Mode Required</p>
+        <p class="mobile-desktop-notice-text">This website works properly only in desktop mode.</p>
+      </div>
+    </div>
+  </section>
   <header class="site-nav">
     <a class="nav-link" href="./index.html">INDEX</a>
     <a class="nav-link" href="./works.html">WORKS</a>
@@ -388,7 +414,7 @@
       const createSnake = () => {
         if (!typerLayer) return;
         if (snakes.length >= maxActiveSnakes) return;
-        const candidates = states.filter((state) => !state.isDropped && state.track);
+        const candidates = states.filter((state) => state.track);
         if (candidates.length === 0) return;
 
         const state = candidates[Math.floor(Math.random() * candidates.length)];
@@ -437,7 +463,7 @@
         for (let i = snakes.length - 1; i >= 0; i -= 1) {
           const snake = snakes[i];
           const state = snake.state;
-          if (!state.track || state.isDropped) {
+          if (!state.track) {
             snake.wrapper.remove();
             snakes.splice(i, 1);
             continue;
@@ -674,6 +700,39 @@
         window.setTimeout(resolve, delay);
       });
       const pickColorFamily = () => colorFamilies[Math.floor(Math.random() * colorFamilies.length)];
+      const personOptionConfig = {
+        "haoxiang-model-stage": {
+          email: "haoxiang_l@nonerd.tech",
+          hasMore: true
+        },
+        "haocheng-model-stage": {
+          email: "v4reft5f@nonerd.tech",
+          hasMore: false
+        }
+      };
+      let menuState = null;
+      let suppressNextCardClick = false;
+
+      const closePersonMenu = () => {
+        if (!menuState) return;
+        const { root, onDocPointerDown, onEsc, onResize, onScroll } = menuState;
+        document.removeEventListener("pointerdown", onDocPointerDown, true);
+        window.removeEventListener("keydown", onEsc);
+        window.removeEventListener("resize", onResize);
+        window.removeEventListener("scroll", onScroll, true);
+        root.remove();
+        menuState = null;
+      };
+
+      const placeMenu = (root, x, y) => {
+        const gap = 16;
+        const width = root.offsetWidth || 240;
+        const height = root.offsetHeight || 44;
+        const left = clamp(x - width / 2, gap, window.innerWidth - width - gap);
+        const top = clamp(y - height / 2, gap, window.innerHeight - height - gap);
+        root.style.left = `${Math.round(left)}px`;
+        root.style.top = `${Math.round(top)}px`;
+      };
 
       const appendPill = (container, item, index) => {
         const pill = document.createElement("span");
@@ -722,35 +781,8 @@
         container.textContent = "";
         const allPillsData = [];
 
-        tags.forEach((tag, idx) => {
-          const words = tag.text.split(" ");
-          words.forEach((word, wIdx) => {
-            allPillsData.push({ text: word, typeLabel: tag.typeLabel });
-            // Insert hollow separator between words of the same tag
-            if (wIdx < words.length - 1) {
-              const spaceCount = Math.floor(Math.random() * 3) + 1; // 1 to 3 spaces
-              allPillsData.push({ 
-                text: " ".repeat(spaceCount), 
-                typeLabel: " ", 
-                forceOutline: true 
-              });
-            }
-          });
-
-          // "随机稀疏插入" - strictly sparse random insertion between different tags
-          if (idx < tags.length - 1) {
-            // e.g., 30% chance to insert an extra separator between completely different tags
-            if (Math.random() < 0.3) {
-              const spaceCount = Math.floor(Math.random() * 3) + 1;
-              const beSolid = Math.random() > 0.5;
-              allPillsData.push({ 
-                text: " ".repeat(spaceCount), 
-                typeLabel: " ", 
-                forceSolid: beSolid, 
-                forceOutline: !beSolid 
-              });
-            }
-          }
+        tags.forEach((tag) => {
+          allPillsData.push({ text: tag.text, typeLabel: tag.typeLabel });
         });
 
         return allPillsData.map((data, index) => appendPill(container, data, index));
@@ -999,16 +1031,36 @@
       };
 
       const closeExpanded = async () => {
+        closePersonMenu();
         if (!active || active.isClosing) return;
         active.isClosing = true;
+        if (active.onWheel) {
+          window.removeEventListener("wheel", active.onWheel, { capture: true });
+        }
+        if (active.onProxyPointerMove) {
+          active.overlay.removeEventListener("pointermove", active.onProxyPointerMove);
+        }
+        if (active.onProxyPointerEnter) {
+          active.overlay.removeEventListener("pointerenter", active.onProxyPointerEnter, true);
+        }
+        if (active.onProxyPointerLeave) {
+          active.overlay.removeEventListener("pointerleave", active.onProxyPointerLeave);
+        }
+        if (active.onModelCanvasClick) {
+          active.stage.removeEventListener("about:model-canvas-click", active.onModelCanvasClick);
+        }
+        if (active.proxyHoverIndex >= 0 && active.pillStates[active.proxyHoverIndex]) {
+          animatePillHoverOut(active.pillStates[active.proxyHoverIndex]);
+        }
         
         // Force stop animations immediately
         unbindPillHover(active);
         
-        // Stop typing, but do not clear text instantly so it fades out with the container size
+        // Skip runExitTypewriter(active), just clear text instantly 
         active.pillStates.forEach((pillState) => {
             pillState.token += 1;
-            // Removed clearing of textContent to fix sudden disappearance
+            pillState.mainEl.textContent = "";
+            pillState.hoverEl.textContent = "";
         });
 
         // Revert Scroll Mode before animating back
@@ -1022,24 +1074,7 @@
             active.leftPane.style.minHeight = "auto";
         }
         if (active.modelBox) {
-            // Read current visual position relative to viewport/shell (which is fixed full screen)
-            // This prevents jumping when switching from fixed: right back to absolute: left
-            const rect = active.modelBox.getBoundingClientRect();
-            // Since shell is top:0 left:0 fixed, rect.top/left are correct relative to shell
-            
-            // disable transition temporarily to set the start point
-            active.modelBox.style.transition = "none";
             active.modelBox.style.position = "absolute";
-            active.modelBox.style.right = "";
-            active.modelBox.style.left = rect.left + "px";
-            active.modelBox.style.top = rect.top + "px";
-            active.modelBox.style.marginTop = "0px";
-            
-            // Force layout read
-            void active.modelBox.offsetWidth;
-
-            // Re-enable transition (restore CSS rule)
-            active.modelBox.style.transition = "";
         }
 
         applyState(active, "start");
@@ -1066,91 +1101,354 @@
         }, durationMs + 30);
       };
 
+      const openExpandedFromCard = (card) => {
+        if (active) return;
+        const state = buildExpandedState(card);
+        if (!state) return;
+
+        const stageParent = state.stage.parentElement;
+        const stageNext = state.stage.nextSibling;
+        state.proxyHoverIndex = -1;
+        const onEsc = (keyEvent) => {
+          if (keyEvent.key === "Escape") closeExpanded();
+        };
+        const onWheel = (wheelEvent) => {
+          if (!active || active.isClosing) return;
+          const target = wheelEvent.target;
+          if (!(target instanceof Node)) return;
+          if (!state.overlay.contains(target)) return;
+          wheelEvent.preventDefault();
+          state.shell.scrollTop += wheelEvent.deltaY;
+        };
+        const setProxyHoverIndex = (nextIndex) => {
+          const currentIndex = state.proxyHoverIndex ?? -1;
+          if (currentIndex === nextIndex) return;
+
+          if (currentIndex >= 0 && state.pillStates[currentIndex]) {
+            animatePillHoverOut(state.pillStates[currentIndex]);
+          }
+
+          state.proxyHoverIndex = nextIndex;
+          if (active && active.stage.id === state.stage.id) {
+            active.proxyHoverIndex = nextIndex;
+          }
+
+          if (nextIndex >= 0 && state.pillStates[nextIndex]) {
+            animatePillHoverIn(state.pillStates[nextIndex]);
+          }
+        };
+        const onProxyPointerMove = (pointerEvent) => {
+          if (!active || active.isClosing || active.stage.id !== state.stage.id) return;
+          const target = pointerEvent.target;
+          if (!(target instanceof Element)) return;
+
+          if (!state.modelBox.contains(target)) {
+            if ((state.proxyHoverIndex ?? -1) >= 0) setProxyHoverIndex(-1);
+            return;
+          }
+
+          const rect = state.modelBox.getBoundingClientRect();
+          if (rect.height <= 0 || state.pillStates.length === 0) return;
+
+          const y = clamp(pointerEvent.clientY - rect.top, 0, rect.height - 1);
+          const ratio = y / Math.max(1, rect.height - 1);
+          const mappedIndex = Math.floor(ratio * state.pillStates.length);
+          const index = clamp(mappedIndex, 0, state.pillStates.length - 1);
+          setProxyHoverIndex(index);
+        };
+        const onProxyPointerEnter = (pointerEvent) => {
+          onProxyPointerMove(pointerEvent);
+        };
+        const onProxyPointerLeave = () => {
+          if ((state.proxyHoverIndex ?? -1) >= 0) setProxyHoverIndex(-1);
+        };
+        const onModelCanvasClick = (event) => {
+          if (!active || active.isClosing || active.stage.id !== state.stage.id) return;
+          const detail = event.detail || {};
+          if (!detail.hitModel) {
+            closeExpanded();
+          }
+        };
+
+        document.body.appendChild(state.overlay);
+        state.modelBox.appendChild(state.stage);
+        applyState(state, "start");
+        document.body.classList.add("about-expand-lock");
+        window.addEventListener("keydown", onEsc);
+        window.addEventListener("wheel", onWheel, { passive: false, capture: true });
+        state.overlay.addEventListener("pointermove", onProxyPointerMove, { passive: true });
+        state.overlay.addEventListener("pointerenter", onProxyPointerEnter, true);
+        state.overlay.addEventListener("pointerleave", onProxyPointerLeave);
+        state.stage.addEventListener("about:model-canvas-click", onModelCanvasClick);
+
+        state.overlay.addEventListener("click", (overlayEvent) => {
+          if (overlayEvent.target === state.overlay) closeExpanded();
+        });
+
+        state.shell.addEventListener("click", (shellEvent) => {
+          if (shellEvent.target === state.shell) closeExpanded();
+        });
+
+        state.leftPane.addEventListener("click", (leftEvent) => {
+          let target = leftEvent.target;
+          if (!(target instanceof Element)) target = target?.parentElement || null;
+          if (!(target instanceof Element)) return;
+          if (target.closest(".about-pill")) {
+            closeExpanded();
+            return;
+          }
+          if (target.closest(".about-expand-title")) {
+            closeExpanded();
+            return;
+          }
+          if (target.closest(".about-expand-tags")) {
+            closeExpanded();
+            return;
+          }
+          if (target === state.leftPane) closeExpanded();
+        });
+
+        active = {
+          ...state,
+          stageParent,
+          stageNext,
+          onEsc,
+          onWheel,
+          onProxyPointerMove,
+          onProxyPointerEnter,
+          onProxyPointerLeave,
+          onModelCanvasClick,
+          proxyHoverIndex: -1,
+          isClosing: false
+        };
+        bindPillHover(active);
+
+        window.requestAnimationFrame(() => {
+          if (!active) return;
+          applyState(active, "end");
+          window.dispatchEvent(new CustomEvent("about-model-expand", {
+            detail: { expanded: true, duration: durationMs, stageId: active.stage.id }
+          }));
+          window.dispatchEvent(new Event("resize"));
+          window.setTimeout(() => {
+            if (!active || active.stage.id !== state.stage.id) return;
+
+            active.shell.style.overflowY = "auto";
+            active.shell.style.overflowX = "hidden";
+            active.leftPane.style.position = "relative";
+            active.leftPane.style.height = "auto";
+            active.leftPane.style.minHeight = "100%";
+            active.leftPane.style.width = "100%";
+            active.leftPane.style.top = "0px";
+            active.leftPane.style.left = "0px";
+            active.leftPane.style.overflow = "visible";
+
+            active.modelBox.style.position = "fixed";
+            active.modelBox.style.marginTop = "0px";
+
+            runEnterTypewriter(active);
+          }, durationMs + 20);
+        });
+      };
+
+      const openPersonMenuForCard = (card, stageEl, clickX, clickY) => {
+        if (active) return;
+        closePersonMenu();
+
+        const stageId = stageEl.id;
+        const personConfig = personOptionConfig[stageId];
+        if (!personConfig) {
+          openExpandedFromCard(card);
+          return;
+        }
+
+        const root = document.createElement("div");
+        root.className = "about-person-menu";
+
+        const inner = document.createElement("div");
+        inner.className = "about-person-menu-inner";
+
+        const options = [
+          {
+            label: "INFO",
+            action: () => openExpandedFromCard(card)
+          },
+          {
+            label: "CONTACT",
+            action: () => {
+              window.location.href = `mailto:${personConfig.email}`;
+            }
+          }
+        ];
+        if (personConfig.hasMore) {
+          options.push({
+            label: "MORE",
+            action: () => {
+              window.location.href = "./te-access.html";
+            }
+          });
+        }
+
+        const toPercentPoint = (angleDeg, radius) => {
+          const rad = (angleDeg * Math.PI) / 180;
+          return {
+            x: 50 + Math.cos(rad) * radius,
+            y: 50 + Math.sin(rad) * radius
+          };
+        };
+        const buildRingSectorClip = (startDeg, endDeg, innerRadius = 0, outerRadius = 50, segments = 18) => {
+          const points = [];
+          for (let i = 0; i <= segments; i += 1) {
+            const t = i / segments;
+            const angle = startDeg + (endDeg - startDeg) * t;
+            const p = toPercentPoint(angle, outerRadius);
+            points.push(`${p.x}% ${p.y}%`);
+          }
+          for (let i = segments; i >= 0; i -= 1) {
+            const t = i / segments;
+            const angle = startDeg + (endDeg - startDeg) * t;
+            const p = toPercentPoint(angle, innerRadius);
+            points.push(`${p.x}% ${p.y}%`);
+          }
+          return `polygon(${points.join(", ")})`;
+        };
+        const createAction = (option, startDeg, endDeg) => {
+          const actionEl = document.createElement("button");
+          actionEl.type = "button";
+          actionEl.className = "about-person-menu-action";
+          actionEl.style.clipPath = buildRingSectorClip(startDeg, endDeg);
+
+          const span = endDeg - startDeg;
+          const labelAngle = startDeg + span * 0.5;
+          const labelPos = toPercentPoint(labelAngle, 34);
+          const label = document.createElement("span");
+          label.className = "about-person-menu-label";
+          label.style.left = `${labelPos.x}%`;
+          label.style.top = `${labelPos.y}%`;
+
+          const en = document.createElement("span");
+          en.className = "about-person-menu-label-en";
+          en.textContent = option.label;
+
+          label.appendChild(en);
+          actionEl.appendChild(label);
+          actionEl.addEventListener("click", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            closePersonMenu();
+            option.action();
+          });
+          return actionEl;
+        };
+
+        const count = options.length;
+        const startBase = count === 3 ? 150 : 90;
+        const step = 360 / count;
+        for (let i = 0; i < count; i += 1) {
+          const startDeg = startBase + i * step;
+          const endDeg = startDeg + step;
+          inner.appendChild(createAction(options[i], startDeg, endDeg));
+        }
+        for (let i = 0; i < count; i += 1) {
+          const divider = document.createElement("span");
+          divider.className = "about-person-menu-divider";
+          // CSS divider ray starts pointing down; map menu angle (0 right, 90 down) into that basis.
+          divider.style.transform = `translateX(-50%) rotate(${startBase + i * step - 90}deg)`;
+          inner.appendChild(divider);
+        }
+
+        const center = document.createElement("span");
+        center.className = "about-person-menu-center";
+        root.appendChild(inner);
+        root.appendChild(center);
+
+        document.body.appendChild(root);
+        placeMenu(root, clickX, clickY);
+
+        const onDocPointerDown = (event) => {
+          const target = event.target;
+          if (!(target instanceof Element)) {
+            suppressNextCardClick = true;
+            closePersonMenu();
+            return;
+          }
+          if (target.closest(".about-person-menu-action")) return;
+          suppressNextCardClick = true;
+          closePersonMenu();
+        };
+        const onEsc = (event) => {
+          if (event.key === "Escape") closePersonMenu();
+        };
+        const onResize = () => {
+          closePersonMenu();
+        };
+        const onScroll = () => {
+          closePersonMenu();
+        };
+
+        document.addEventListener("pointerdown", onDocPointerDown, true);
+        window.addEventListener("keydown", onEsc);
+        window.addEventListener("resize", onResize);
+        window.addEventListener("scroll", onScroll, true);
+        menuState = { root, onDocPointerDown, onEsc, onResize, onScroll };
+      };
+
       cards.forEach((card) => {
+        const stageEl = card.querySelector(".about-model-stage");
+        if (stageEl) {
+          let downPoint = null;
+          let dragged = false;
+          const dragThreshold = 8;
+
+          stageEl.addEventListener("pointerdown", (event) => {
+            downPoint = { x: event.clientX, y: event.clientY };
+            dragged = false;
+          }, { passive: true });
+
+          stageEl.addEventListener("pointermove", (event) => {
+            if (!downPoint || dragged) return;
+            const dx = event.clientX - downPoint.x;
+            const dy = event.clientY - downPoint.y;
+            if (Math.hypot(dx, dy) > dragThreshold) {
+              dragged = true;
+            }
+          }, { passive: true });
+
+          stageEl.addEventListener("pointerup", () => {
+            window.setTimeout(() => {
+              downPoint = null;
+              dragged = false;
+            }, 0);
+          }, { passive: true });
+
+          stageEl.addEventListener("pointercancel", () => {
+            downPoint = null;
+            dragged = false;
+          }, { passive: true });
+
+          stageEl.addEventListener("click", (event) => {
+            if (active) return;
+            if (suppressNextCardClick) {
+              suppressNextCardClick = false;
+              return;
+            }
+            if (dragged) return;
+            event.preventDefault();
+            event.stopPropagation();
+            openPersonMenuForCard(card, stageEl, event.clientX, event.clientY);
+          });
+        }
+
         card.addEventListener("click", (event) => {
           if (!(event.target instanceof Element)) return;
           if (active) return;
-
-          const state = buildExpandedState(card);
-          if (!state) return;
-
-          const stageParent = state.stage.parentElement;
-          const stageNext = state.stage.nextSibling;
-          const onEsc = (keyEvent) => {
-            if (keyEvent.key === "Escape") closeExpanded();
-          };
-
-          document.body.appendChild(state.overlay);
-          state.modelBox.appendChild(state.stage);
-          applyState(state, "start");
-          document.body.classList.add("about-expand-lock");
-          window.addEventListener("keydown", onEsc);
-
-          state.overlay.addEventListener("click", (overlayEvent) => {
-            if (overlayEvent.target === state.overlay) closeExpanded();
-          });
-
-          state.shell.addEventListener("click", (shellEvent) => {
-            if (shellEvent.target === state.shell) closeExpanded();
-          });
-
-          state.leftPane.addEventListener("click", (leftEvent) => {
-            let target = leftEvent.target;
-            if (!(target instanceof Element)) target = target?.parentElement || null;
-            if (!(target instanceof Element)) return;
-            if (target.closest(".about-pill")) return;
-            if (target.closest(".about-expand-title")) {
-              closeExpanded();
-              return;
-            }
-            if (target.closest(".about-expand-tags")) {
-              closeExpanded();
-              return;
-            }
-            if (target === state.leftPane) closeExpanded();
-          });
-
-          active = {
-            ...state,
-            stageParent,
-            stageNext,
-            onEsc,
-            isClosing: false
-          };
-          bindPillHover(active);
-
-          window.requestAnimationFrame(() => {
-            if (!active) return;
-            applyState(active, "end");
-            window.dispatchEvent(new CustomEvent("about-model-expand", {
-              detail: { expanded: true, duration: durationMs, stageId: active.stage.id }
-            }));
-            window.dispatchEvent(new Event("resize"));
-            window.setTimeout(() => {
-              if (!active || active.stage.id !== state.stage.id) return;
-              
-              // Enable Scroll Mode
-              active.shell.style.overflowY = "auto";
-              active.shell.style.overflowX = "hidden";
-              active.leftPane.style.position = "relative";
-              active.leftPane.style.height = "auto";
-              active.leftPane.style.minHeight = "100%";
-              active.leftPane.style.width = "100%";
-              active.leftPane.style.top = "0px";
-              active.leftPane.style.left = "0px";
-              active.leftPane.style.overflow = "visible";
-
-              // Keep model fixed on screen so it doesn't scroll away
-              // Calculate right gap based on initial layout logic so it sticks to right edge even on resize
-              const rightGap = active.end.shellWidth - (active.end.modelLeft + active.end.modelWidth);
-              active.modelBox.style.right = rightGap + "px";
-              active.modelBox.style.left = "auto";
-              active.modelBox.style.position = "fixed";
-              active.modelBox.style.marginTop = "0px"; 
-
-              runEnterTypewriter(active);
-            }, durationMs + 20);
-          });
+          if (suppressNextCardClick) {
+            suppressNextCardClick = false;
+            return;
+          }
+          closePersonMenu();
+          if (event.target.closest(".about-model-stage")) return;
+          openExpandedFromCard(card);
         });
       });
     })();
@@ -1185,30 +1483,18 @@
       const activeConfigs = modelConfigs.filter((config) => document.querySelector(`#${config.stageId}`));
       if (activeConfigs.length === 0) return;
       const stageLoadState = new Map(activeConfigs.map((config) => [config.stageId, false]));
-      let hasRevealedStages = false;
       const revealStagesWhenReady = () => {
-        if (hasRevealedStages) return;
         const allDone = Array.from(stageLoadState.values()).every(Boolean);
         if (!allDone) return;
         activeConfigs.forEach((config) => {
           const stageEl = document.querySelector(`#${config.stageId}`);
           if (stageEl) stageEl.classList.remove("is-preload");
         });
-        hasRevealedStages = true;
       };
       activeConfigs.forEach((config) => {
         const stageEl = document.querySelector(`#${config.stageId}`);
         if (stageEl) stageEl.classList.add("is-preload");
       });
-      // Fallback: avoid permanent hidden models on slow/failed networks.
-      window.setTimeout(() => {
-        if (hasRevealedStages) return;
-        activeConfigs.forEach((config) => {
-          const stageEl = document.querySelector(`#${config.stageId}`);
-          if (stageEl) stageEl.classList.remove("is-preload");
-        });
-        hasRevealedStages = true;
-      }, 9000);
 
       let THREE;
       let OrbitControls;
@@ -1346,46 +1632,9 @@
         const slashIndex = config.idleUrl.lastIndexOf("/");
         const modelDir = slashIndex >= 0 ? config.idleUrl.slice(0, slashIndex + 1) : "./assets/models/";
         loader.setResourcePath(`${modelDir}mesh_animate.fbm/`);
-        const wait = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
-        const fetchArrayBufferWithRetry = async (url, maxAttempts = 3) => {
-          let lastError = null;
-          for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-            const controller = new AbortController();
-            const timeoutId = window.setTimeout(() => controller.abort(), 120000);
-            try {
-              const response = await fetch(url, {
-                signal: controller.signal,
-                cache: "force-cache",
-                credentials: "same-origin"
-              });
-              if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-              }
-              return await response.arrayBuffer();
-            } catch (error) {
-              lastError = error;
-              if (attempt < maxAttempts) {
-                await wait(350 * (2 ** (attempt - 1)));
-              }
-            } finally {
-              window.clearTimeout(timeoutId);
-            }
-          }
-          throw lastError || new Error(`Failed to load ${url}`);
-        };
-        const loadFbxWithRetry = async (url, { optional = false } = {}) => {
-          if (!url) return null;
-          try {
-            const buffer = await fetchArrayBufferWithRetry(url, 3);
-            return loader.parse(buffer, modelDir);
-          } catch (error) {
-            if (optional) {
-              console.warn(`Optional FBX failed: ${url}`, error);
-              return null;
-            }
-            throw error;
-          }
-        };
+        const loadFbx = (url) => new Promise((resolve, reject) => {
+          loader.load(url, resolve, undefined, reject);
+        });
         const normalizeMaterial = (material) => {
           if (!material) return;
           const hasColorMap = Boolean(material.map);
@@ -1437,7 +1686,12 @@
           const move = Math.hypot(event.clientX - pointerDownPoint.x, event.clientY - pointerDownPoint.y);
           pointerDownPoint = null;
           if (move > 6) return;
-          if (!pickModelHit(event)) return;
+          const hitModel = pickModelHit(event);
+          stage.dispatchEvent(new CustomEvent("about:model-canvas-click", {
+            detail: { stageId: config.stageId, hitModel },
+            bubbles: false
+          }));
+          if (!hitModel) return;
           const clickActionName = actions.click ? "click" : "move";
           if (!actions[clickActionName]) return;
           playAnimation(currentAnimation === "idle" ? clickActionName : "idle");
@@ -1459,9 +1713,11 @@
         }
 
         try {
-          const idleFbx = await loadFbxWithRetry(config.idleUrl);
-          const moveFbx = await loadFbxWithRetry(config.moveUrl, { optional: true });
-          const clickFbx = await loadFbxWithRetry(config.clickUrl, { optional: true });
+          const [idleFbx, moveFbx, clickFbx] = await Promise.all([
+            loadFbx(config.idleUrl),
+            loadFbx(config.moveUrl).catch(() => null),
+            config.clickUrl ? loadFbx(config.clickUrl).catch(() => null) : Promise.resolve(null)
+          ]);
 
           idleFbx.traverse((child) => {
             if (!child.isMesh) return;
@@ -1557,16 +1813,13 @@
         return disposeViewer;
       };
 
-      // Load models sequentially to avoid overwhelming HTTP/2 connection with ~164MB concurrent downloads
-      for (const config of activeConfigs) {
-        const dispose = await initModelViewer(config);
+      const initResults = await Promise.all(activeConfigs.map((config) => initModelViewer(config)));
+      initResults.forEach((dispose) => {
         if (typeof dispose === "function") disposers.push(dispose);
-      }
+      });
 
       window.addEventListener("beforeunload", () => {
         disposers.forEach((dispose) => dispose());
       }, { once: true });
     })();
   </script>
-</body>
-</html>

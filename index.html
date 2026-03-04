@@ -4,6 +4,18 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>NerdTechno</title>
+  <script>
+    (function () {
+      const ua = navigator.userAgent || "";
+      const mobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(ua);
+      const update = () => {
+        const smallViewport = window.matchMedia("(max-width: 900px)").matches;
+        document.documentElement.classList.toggle("is-mobile-blocked", mobileUA && smallViewport);
+      };
+      update();
+      window.addEventListener("resize", update);
+    })();
+  </script>
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="shortcut icon" href="/favicon.ico" />
   <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32.png" />
@@ -13,6 +25,20 @@
   <link rel="stylesheet" href="./styles.css?v=6" />
 </head>
 <body>
+  <section class="mobile-desktop-notice" aria-label="Desktop Mode Required">
+    <div class="mobile-desktop-notice-inner">
+      <div class="mobile-desktop-notice-nav" aria-hidden="true">
+        <span>INDEX</span>
+        <span>WORKS</span>
+        <span>ABOUT</span>
+      </div>
+      <div class="mobile-desktop-notice-bar" aria-hidden="true"></div>
+      <div class="mobile-desktop-notice-copy">
+        <p class="mobile-desktop-notice-title">Desktop Mode Required</p>
+        <p class="mobile-desktop-notice-text">This website works properly only in desktop mode.</p>
+      </div>
+    </div>
+  </section>
   <header class="site-nav">
     <a class="nav-link is-active" href="./index.html" aria-current="page">INDEX</a>
     <a class="nav-link" href="./works.html">WORKS</a>

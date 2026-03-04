@@ -61,6 +61,18 @@ html::-webkit-scrollbar {
   display: none;
 }
 
+/* Hide scrollbars globally while preserving scroll behavior */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
 body {
   background: var(--bg);
   color: var(--ink);
@@ -417,8 +429,8 @@ body.works-anim-lock .dot-cursor {
   position: relative;
   z-index: 2;
   font-family: Helvetica, Arial, sans-serif;
-  font-size: calc(var(--works-row-h) * 0.96);
-  line-height: 0.92;
+  font-size: calc(var(--works-row-h) * 1.06);
+  line-height: 0.82;
   font-weight: 100;
   letter-spacing: -0.1em;
   white-space: nowrap;
@@ -445,8 +457,8 @@ body.works-anim-lock .dot-cursor {
   display: block;
   white-space: nowrap;
   font-family: Helvetica, Arial, sans-serif;
-  font-size: calc(var(--works-row-h) * 0.96);
-  line-height: 0.92;
+  font-size: calc(var(--works-row-h) * 1.06);
+  line-height: 0.82;
   font-weight: 100;
   letter-spacing: -0.1em;
   color: #ffffff;
@@ -574,7 +586,7 @@ body.works-anim-lock .dot-cursor {
 
 .about-model-card {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   flex-direction: column;
   align-items: stretch;
   justify-content: flex-start;
@@ -589,7 +601,7 @@ body.works-anim-lock .dot-cursor {
   min-height: 0;
   touch-action: pan-y !important; /* Allow vertical scroll even over model */
   background: transparent;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .about-model-stage.is-preload {
@@ -619,6 +631,99 @@ body.custom-cursor .about-model-stage * {
   transition: opacity 160ms linear;
 }
 
+.about-person-menu {
+  position: fixed;
+  z-index: 1600;
+  width: 184px;
+  height: 184px;
+  display: block;
+  pointer-events: auto;
+}
+
+.about-person-menu-inner {
+  position: absolute;
+  inset: 0;
+  border: 1px solid #000000;
+  border-radius: 50%;
+  background: #e8e8e8;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+.about-person-menu-divider {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 1px;
+  height: 50%;
+  background: #000000;
+  transform-origin: 50% 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.about-person-menu-action {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: transparent;
+  color: #000000;
+  padding: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.about-person-menu-action:hover,
+.about-person-menu-action:focus-visible {
+  background: #000000;
+  color: #ffffff;
+  outline: none;
+}
+
+.about-person-menu-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.about-person-menu-label-en {
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  letter-spacing: -0.08em;
+  font-weight: 600;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.about-person-menu-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24px;
+  height: 24px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid #000000;
+  background: #e8e8e8;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.about-person-menu-center::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #000000;
+}
+
 .model-error-tip {
   margin: 0;
   padding: 0 12px;
@@ -646,7 +751,7 @@ body.about-expand-lock {
   position: fixed;
   background: #e8e8e8;
   border: 1px solid #000000;
-  overflow: hidden;
+  overflow: visible;
   pointer-events: auto;
   transition:
     top 680ms linear,
@@ -683,7 +788,7 @@ body.about-expand-lock {
   position: static;
   margin: 0;
   font-size: 1em;
-  line-height: 1; /* Match .about-card line-height: 1 */
+  line-height: 0.96;
   letter-spacing: -0.1em;
   font-family: Helvetica, Arial, sans-serif;
   font-weight: 100;
@@ -888,14 +993,13 @@ body.about-expand-lock {
 }
 
 .event-item {
-  display: grid;
-  grid-template-columns: 1.2fr 2fr;
-  align-items: baseline;
-  gap: 20px;
+  display: flex;
+  align-items: center;
   border-bottom: 2px solid #000000;
   padding: 0;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   line-height: 1.1;
+  position: relative;
 }
 
 .event-item:last-child {
@@ -903,15 +1007,22 @@ body.about-expand-lock {
 }
 
 .event-date {
+  text-align: left;
+  margin-left: -0.07em;
   font-size: clamp(24px, 3vw, 42px);
   font-weight: 700;
   letter-spacing: -0.1em;
+  white-space: nowrap;
 }
 
 .event-desc {
+  position: absolute;
+  right: 0;
+  text-align: right;
   font-size: clamp(24px, 3vw, 42px);
   font-weight: 400; /* Bolder thin */ 
   letter-spacing: -0.1em;
+  white-space: nowrap;
 }
 
 .wuxi-link {
@@ -1013,6 +1124,83 @@ body.about-expand-lock {
   line-height: 0.95;
   font-weight: 100;
   letter-spacing: -0.1em;
+}
+
+.mobile-desktop-notice {
+  display: none;
+  min-height: 100vh;
+  background: var(--bg);
+  color: #000000;
+  font-family: Helvetica, Arial, sans-serif;
+}
+
+.mobile-desktop-notice-inner {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+}
+
+.mobile-desktop-notice-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  align-items: center;
+  width: 100%;
+  color: #000000;
+  font-size: clamp(24px, 7vw, 42px);
+  line-height: 1;
+  letter-spacing: -0.1em;
+}
+
+.mobile-desktop-notice-nav span:first-child {
+  justify-self: start;
+}
+
+.mobile-desktop-notice-nav span:nth-child(2) {
+  justify-self: center;
+}
+
+.mobile-desktop-notice-nav span:last-child {
+  justify-self: end;
+}
+
+.mobile-desktop-notice-bar {
+  width: 100%;
+  height: var(--accent-h);
+  background: var(--accent);
+}
+
+.mobile-desktop-notice-copy {
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  border-top: 1px solid #000000;
+  border-bottom: 1px solid #000000;
+  padding: clamp(22px, 7vw, 46px) clamp(12px, 4vw, 22px);
+}
+
+.mobile-desktop-notice-title,
+.mobile-desktop-notice-text {
+  margin: 0;
+  letter-spacing: -0.1em;
+  line-height: 0.95;
+}
+
+.mobile-desktop-notice-title {
+  font-size: clamp(34px, 10vw, 64px);
+  font-weight: 500;
+}
+
+.mobile-desktop-notice-text {
+  font-size: clamp(20px, 5.8vw, 36px);
+  font-weight: 300;
+}
+
+html.is-mobile-blocked body > :not(.mobile-desktop-notice) {
+  display: none !important;
+}
+
+html.is-mobile-blocked .mobile-desktop-notice {
+  display: block;
 }
 
 @media (max-width: 900px) {
