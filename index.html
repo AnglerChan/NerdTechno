@@ -57,7 +57,7 @@
       </div>
     </section>
     <div class="accent-bar" aria-hidden="true"></div>
-    <section class="hero-copy" aria-label="Studio Intro">
+    <section class="hero-copy index-copy" aria-label="Studio Intro">
       <p class="hero-text">We are NerdTechno,<br />a design &amp; engineering studio based in <a class="wuxi-link" href="https://www.jiangnan.edu.cn/">Wuxi, China</a>.</p>
       <p class="hero-text">We focus on<br /><span class="studio-mark" tabindex="0">nerd(esign) &amp; techno(logy)</span>.</p>
     </section>
@@ -71,7 +71,11 @@
     <p class="footer-copy">&copy; 2026 NerdTechno</p>
   </footer>
 
-  <div class="dot-cursor" aria-hidden="true"></div>
+  <div class="dot-cursor" aria-hidden="true">
+    <svg class="dot-cursor-svg" viewBox="0 0 100 100" focusable="false" aria-hidden="true">
+      <circle class="dot-cursor-ring" cx="50" cy="50" r="44" />
+    </svg>
+  </div>
 
   <script>
     (function () {
@@ -106,13 +110,27 @@
 
       const setCursorHoverState = (event) => {
         const interactive = event.target.closest("a, button, [role='button']");
+        const modelStage = event.target.closest("#haocheng-model-stage");
         document.body.classList.toggle("cursor-hover", Boolean(interactive));
+        document.body.classList.toggle("cursor-model", Boolean(modelStage));
       };
 
       window.addEventListener("pointermove", moveCursor, { passive: true });
-      window.addEventListener("pointerdown", moveCursor, { passive: true });
+      window.addEventListener("pointerdown", (event) => {
+        moveCursor(event);
+        document.body.classList.add("cursor-press");
+      }, { passive: true });
+      window.addEventListener("pointerup", () => {
+        document.body.classList.remove("cursor-press");
+      }, { passive: true });
+      window.addEventListener("pointercancel", () => {
+        document.body.classList.remove("cursor-press");
+      }, { passive: true });
       window.addEventListener("pointerover", setCursorHoverState, { passive: true });
       window.addEventListener("pointerout", setCursorHoverState, { passive: true });
+      window.addEventListener("blur", () => {
+        document.body.classList.remove("cursor-press");
+      });
     })();
 
     (function () {
@@ -359,7 +377,7 @@
       const createSnake = () => {
         if (!typerLayer) return;
         if (snakes.length >= maxActiveSnakes) return;
-        const candidates = states.filter((state) => !state.isDropped && state.track);
+        const candidates = states.filter((state) => state.track);
         if (candidates.length === 0) return;
 
         const state = candidates[Math.floor(Math.random() * candidates.length)];
@@ -408,7 +426,7 @@
         for (let i = snakes.length - 1; i >= 0; i -= 1) {
           const snake = snakes[i];
           const state = snake.state;
-          if (!state.track || state.isDropped) {
+          if (!state.track) {
             snake.wrapper.remove();
             snakes.splice(i, 1);
             continue;

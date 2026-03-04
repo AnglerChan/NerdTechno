@@ -53,11 +53,24 @@
             <path fill="#000000" d="M 7750 0 L 8821 0 L 8821 840 Z"/>
           </g>
         </svg>
+        <div class="hero-fill-layer" aria-hidden="true"></div>
         <div class="typer-layer" aria-hidden="true"></div>
       </div>
     </section>
     <div class="accent-bar" aria-hidden="true"></div>
-    <section class="hero-copy" aria-label="Studio Intro"></section>
+    <section class="hero-copy works-copy" aria-label="Works List">
+      <div class="works-shell">
+        <div class="works-item">
+          <span class="works-item-title">01 ATLAS</span>
+        </div>
+        <div class="works-item">
+          <span class="works-item-title">02 SAMPLE</span>
+        </div>
+        <div class="works-item">
+          <span class="works-item-title">03 SAMPLE</span>
+        </div>
+      </div>
+    </section>
   </main>
 
   <footer class="site-footer" aria-label="Social Media">
@@ -68,7 +81,20 @@
     <p class="footer-copy">&copy; 2026 NerdTechno</p>
   </footer>
 
-  <div class="dot-cursor" aria-hidden="true"></div>
+  <div class="dot-cursor" aria-hidden="true">
+    <svg class="dot-cursor-svg" viewBox="0 0 100 100" focusable="false" aria-hidden="true">
+      <circle class="dot-cursor-ring" cx="50" cy="50" r="44" />
+    </svg>
+  </div>
+  <div class="works-interaction-lock" aria-hidden="true"></div>
+  <div class="works-blackout-layer" aria-hidden="true">
+    <button class="works-blackout-back" type="button" aria-label="Back to works list">
+      <svg viewBox="0 0 100 1000" role="img" aria-hidden="true" focusable="false" preserveAspectRatio="none">
+        <path class="works-blackout-chevron" d="M84 8 L14 500 L84 992" />
+        <rect class="works-blackout-dash" x="36" y="496" width="34" height="8" />
+      </svg>
+    </button>
+  </div>
 
   <script>
     (function () {
@@ -103,13 +129,349 @@
 
       const setCursorHoverState = (event) => {
         const interactive = event.target.closest("a, button, [role='button']");
+        const modelStage = event.target.closest("#haocheng-model-stage");
         document.body.classList.toggle("cursor-hover", Boolean(interactive));
+        document.body.classList.toggle("cursor-model", Boolean(modelStage));
       };
 
       window.addEventListener("pointermove", moveCursor, { passive: true });
-      window.addEventListener("pointerdown", moveCursor, { passive: true });
+      window.addEventListener("pointerdown", (event) => {
+        moveCursor(event);
+        document.body.classList.add("cursor-press");
+      }, { passive: true });
+      window.addEventListener("pointerup", () => {
+        document.body.classList.remove("cursor-press");
+      }, { passive: true });
+      window.addEventListener("pointercancel", () => {
+        document.body.classList.remove("cursor-press");
+      }, { passive: true });
       window.addEventListener("pointerover", setCursorHoverState, { passive: true });
       window.addEventListener("pointerout", setCursorHoverState, { passive: true });
+      window.addEventListener("blur", () => {
+        document.body.classList.remove("cursor-press");
+      });
+    })();
+
+    (function () {
+      const shell = document.querySelector(".works-shell");
+      const heroVisual = document.querySelector(".hero-visual");
+      const heroFillLayer = document.querySelector(".hero-fill-layer");
+      const blackoutLayer = document.querySelector(".works-blackout-layer");
+      const interactionLock = document.querySelector(".works-interaction-lock");
+      const blackoutBack = blackoutLayer?.querySelector(".works-blackout-back");
+      if (!shell) return;
+
+      const items = Array.from(shell.querySelectorAll(".works-item"));
+      if (items.length === 0) return;
+
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const timers = [];
+      let animating = false;
+      let isLocked = false;
+      let keyBlockBound = false;
+      const heroTypingStagger = prefersReducedMotion ? 0 : 14;
+      const heroTypingRandomDelayRange = prefersReducedMotion ? 0 : 88;
+      const heroTypingDurationBase = prefersReducedMotion ? 0 : 620;
+      const heroTypingDurationRange = prefersReducedMotion ? 0 : 360;
+      const worksTypingStagger = prefersReducedMotion ? 0 : 4;
+      const worksTypingRandomDelayRange = prefersReducedMotion ? 0 : 12;
+      const worksTypingDurationBase = prefersReducedMotion ? 0 : 150;
+      const worksTypingDurationRange = prefersReducedMotion ? 0 : 70;
+
+      const blockInput = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      };
+
+      const clearTimers = () => {
+        while (timers.length > 0) {
+          window.clearTimeout(timers.pop());
+        }
+      };
+
+      const pushTimer = (callback, ms) => {
+        const id = window.setTimeout(callback, ms);
+        timers.push(id);
+      };
+
+      const estimateChars = (widthPx, fontPx) => {
+        const charWidth = Math.max(7, fontPx * 0.53);
+        return Math.ceil(widthPx / charWidth) + 28;
+      };
+
+      const buildNoisyToken = (token, dropRate) => {
+        if (dropRate <= 0) return token;
+        let out = "";
+        let kept = 0;
+
+        for (let i = 0; i < token.length; i += 1) {
+          const ch = token[i];
+          if (ch === " ") {
+            out += ch;
+            continue;
+          }
+          if (Math.random() < dropRate) {
+            out += Math.random() < 0.45 ? "\u2003\u2003" : "\u2003";
+          } else {
+            out += ch;
+            kept += 1;
+          }
+        }
+
+        if (kept < Math.max(2, Math.floor((token.length - 1) * 0.45))) {
+          return token;
+        }
+
+        return out.endsWith(" ") ? out : `${out} `;
+      };
+
+      const buildFillText = (label, wrapChars, minChars, dropRate = 0) => {
+        const token = `${label} `;
+        const safeWrap = Math.max(0, Math.min(wrapChars, token.length - 1));
+        const lead = safeWrap > 0 ? token.slice(token.length - safeWrap) : token;
+        let out = lead;
+
+        while (out.length < minChars) {
+          out += buildNoisyToken(token, dropRate);
+        }
+
+        return out + token;
+      };
+
+      const fillRowWithCharOpacity = (row, text) => {
+        const frag = document.createDocumentFragment();
+        for (let i = 0; i < text.length; i += 1) {
+          const ch = text[i];
+          const span = document.createElement("span");
+          span.className = "hero-fill-char";
+          span.textContent = ch === " " ? "\u00A0" : ch;
+
+          if (!/\s/.test(ch)) {
+            const charOpacity = prefersReducedMotion ? "0.62" : (0.18 + Math.random() * 0.82).toFixed(2);
+            span.style.setProperty("--hero-char-opacity", charOpacity);
+          }
+
+          frag.appendChild(span);
+        }
+        row.appendChild(frag);
+      };
+
+      const resetState = () => {
+        items.forEach((item) => {
+          item.classList.remove("is-flashing", "is-erasing", "is-fill-typing");
+          item.style.removeProperty("--erase-delay");
+          item.style.removeProperty("--fill-delay");
+          item.style.removeProperty("--fill-duration");
+          item.style.removeProperty("--fill-shift");
+        });
+      };
+
+      const lockInteraction = () => {
+        if (isLocked) return;
+        isLocked = true;
+        document.body.classList.add("works-anim-lock");
+        interactionLock?.classList.add("is-active");
+        if (!keyBlockBound) {
+          window.addEventListener("keydown", blockInput, { capture: true });
+          window.addEventListener("wheel", blockInput, { passive: false, capture: true });
+          window.addEventListener("touchmove", blockInput, { passive: false, capture: true });
+          keyBlockBound = true;
+        }
+      };
+
+      const unlockInteraction = () => {
+        if (!isLocked) return;
+        isLocked = false;
+        document.body.classList.remove("works-anim-lock");
+        interactionLock?.classList.remove("is-active");
+        if (keyBlockBound) {
+          window.removeEventListener("keydown", blockInput, { capture: true });
+          window.removeEventListener("wheel", blockInput, { capture: true });
+          window.removeEventListener("touchmove", blockInput, { capture: true });
+          keyBlockBound = false;
+        }
+      };
+
+      const runHeroFill = (label, baseDelay) => {
+        if (!heroVisual || !heroFillLayer) return;
+
+        heroFillLayer.textContent = "";
+
+        const layerRect = heroFillLayer.getBoundingClientRect();
+        const sampleTitle = items[0]?.querySelector(".works-item-title");
+        const sampleStyle = sampleTitle ? window.getComputedStyle(sampleTitle) : null;
+        const baseFont = sampleStyle ? parseFloat(sampleStyle.fontSize) || 72 : 72;
+        const rowFont = Math.max(18, baseFont);
+        const rowHeight = Math.max(20, Math.floor(rowFont * 0.84));
+        const rowCount = Math.max(2, Math.ceil(layerRect.height / rowHeight));
+        heroFillLayer.style.setProperty("--hero-row-count", String(rowCount));
+
+        let maxEnd = 0;
+
+        for (let i = 0; i < rowCount; i += 1) {
+          const row = document.createElement("span");
+          row.className = "hero-fill-row";
+
+          const shiftMax = Math.max(2, Math.floor(label.length * 0.66));
+          const shiftChars = prefersReducedMotion ? 0 : Math.floor(Math.random() * (shiftMax + 1));
+          const wrapChars = shiftChars + 2 + (prefersReducedMotion ? 0 : Math.floor(Math.random() * Math.max(1, label.length - 1)));
+          const minChars = estimateChars(layerRect.width, rowFont) * 3 + label.length * 8;
+          const rowText = buildFillText(label, wrapChars, minChars, prefersReducedMotion ? 0 : 0.42);
+
+          const rowDelay = baseDelay + i * heroTypingStagger + Math.floor(Math.random() * heroTypingRandomDelayRange);
+          const rowDuration = heroTypingDurationBase + Math.floor(Math.random() * heroTypingDurationRange);
+          maxEnd = Math.max(maxEnd, rowDelay + rowDuration);
+
+          row.style.fontSize = `${rowFont}px`;
+          row.style.setProperty("--hero-shift", `-${shiftChars}ch`);
+          row.style.setProperty("--hero-fill-delay", `${rowDelay}ms`);
+          row.style.setProperty("--hero-fill-duration", `${rowDuration}ms`);
+          fillRowWithCharOpacity(row, rowText);
+
+          heroFillLayer.appendChild(row);
+        }
+
+        void heroFillLayer.offsetWidth;
+        heroFillLayer.querySelectorAll(".hero-fill-row").forEach((row) => {
+          row.classList.add("is-run");
+        });
+
+        return maxEnd;
+      };
+
+      const runBlackout = () => {
+        if (!blackoutLayer) return;
+        blackoutLayer.classList.remove("is-leave");
+        blackoutLayer.classList.remove("is-run");
+        void blackoutLayer.offsetWidth;
+        blackoutLayer.classList.add("is-run");
+      };
+
+      const hideBlackout = () => {
+        if (!blackoutLayer) return;
+        blackoutLayer.classList.remove("is-run");
+        blackoutLayer.classList.add("is-leave");
+      };
+
+      items.forEach((item) => {
+        item.setAttribute("role", "button");
+        item.setAttribute("tabindex", "0");
+
+        const fill = document.createElement("span");
+        fill.className = "works-item-fill";
+        fill.setAttribute("aria-hidden", "true");
+
+        const fillTrack = document.createElement("span");
+        fillTrack.className = "works-item-fill-track";
+
+        fill.appendChild(fillTrack);
+        item.appendChild(fill);
+      });
+
+      const runAnimation = (clickedIndex) => {
+        if (animating || clickedIndex < 0 || clickedIndex >= items.length) return;
+
+        const clickedItem = items[clickedIndex];
+        const clickedTitle = clickedItem.querySelector(".works-item-title");
+        if (!clickedTitle) return;
+
+        animating = true;
+        clearTimers();
+        resetState();
+
+        const label = (clickedTitle.textContent || "").trim();
+        const flashDuration = prefersReducedMotion ? 0 : 180;
+        const eraseBase = prefersReducedMotion ? 0 : 26;
+        const eraseStep = prefersReducedMotion ? 0 : 56;
+        const eraseAnimDuration = prefersReducedMotion ? 0 : 160;
+        const fillAfterEraseGap = prefersReducedMotion ? 0 : 4;
+        const fillBase = 0;
+        const heroBase = fillBase;
+        const entranceAfterHeroStart = prefersReducedMotion ? 0 : 64;
+        lockInteraction();
+
+        items.forEach((item, index) => {
+          const fillTrack = item.querySelector(".works-item-fill-track");
+          const titleEl = item.querySelector(".works-item-title");
+          const titleStyle = titleEl ? window.getComputedStyle(titleEl) : null;
+          const fontPx = titleStyle ? parseFloat(titleStyle.fontSize) || 72 : 72;
+          const widthPx = item.clientWidth || shell.clientWidth || window.innerWidth;
+
+          const shiftMax = Math.max(2, Math.floor(label.length * 0.45));
+          const shiftChars = prefersReducedMotion ? 0 : Math.floor(Math.random() * (shiftMax + 1));
+          const wrapChars = shiftChars + 2 + (prefersReducedMotion ? 0 : Math.floor(Math.random() * Math.max(1, label.length - 1)));
+          const minChars = estimateChars(widthPx, fontPx) * 6 + label.length * 20;
+          const fillText = buildFillText(label, wrapChars, minChars, 0);
+          if (fillTrack) fillTrack.textContent = fillText;
+
+          const eraseDistance = Math.abs(index - clickedIndex);
+          const eraseDelay = eraseBase + eraseDistance * eraseStep;
+          const randomDelay = Math.floor(Math.random() * worksTypingRandomDelayRange);
+          const fillDelay = Math.max(
+            fillBase + index * worksTypingStagger + randomDelay,
+            eraseDelay + eraseAnimDuration + fillAfterEraseGap
+          );
+          const fillDuration = worksTypingDurationBase + Math.floor(Math.random() * worksTypingDurationRange);
+          const fillShift = prefersReducedMotion ? "0" : String(shiftChars);
+
+          item.style.setProperty("--fill-delay", `${fillDelay}ms`);
+          item.style.setProperty("--fill-duration", `${fillDuration}ms`);
+          item.style.setProperty("--fill-shift", `-${fillShift}ch`);
+
+          item.style.setProperty("--erase-delay", `${eraseDelay}ms`);
+        });
+
+        clickedItem.classList.add("is-flashing");
+        pushTimer(() => {
+          clickedItem.classList.remove("is-flashing");
+        }, flashDuration + 10);
+
+        items.forEach((item) => item.classList.add("is-erasing"));
+        runHeroFill(label, heroBase);
+
+        void shell.offsetWidth;
+        items.forEach((item) => item.classList.add("is-fill-typing"));
+
+        pushTimer(() => {
+          runBlackout();
+          if (prefersReducedMotion || !blackoutLayer) {
+            unlockInteraction();
+            animating = false;
+            return;
+          }
+
+          const handleBlackoutEnd = () => {
+            blackoutLayer.removeEventListener("animationend", handleBlackoutEnd);
+            unlockInteraction();
+            animating = false;
+          };
+          blackoutLayer.addEventListener("animationend", handleBlackoutEnd);
+        }, entranceAfterHeroStart);
+      };
+
+      blackoutBack?.addEventListener("click", () => {
+        hideBlackout();
+        heroFillLayer.textContent = "";
+        resetState();
+        unlockInteraction();
+        animating = false;
+        if (blackoutLayer) {
+          const handleLeaveEnd = () => {
+            blackoutLayer.removeEventListener("animationend", handleLeaveEnd);
+            blackoutLayer.classList.remove("is-leave");
+          };
+          blackoutLayer.addEventListener("animationend", handleLeaveEnd);
+        }
+      });
+
+      items.forEach((item, index) => {
+        item.addEventListener("click", () => runAnimation(index));
+        item.addEventListener("keydown", (event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          event.preventDefault();
+          runAnimation(index);
+        });
+      });
     })();
 
     (function () {
