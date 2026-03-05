@@ -994,8 +994,8 @@
         const endModelHeight = window.innerHeight;
         const rightPaneLeft = window.innerWidth * 0.56;
         const rightPaneWidth = window.innerWidth - rightPaneLeft;
-        const endModelWidth = clamp(rightPaneWidth * 0.96, 420, rightPaneWidth);
-        const modelBleed = clamp(window.innerWidth * 0.24, 220, 520);
+        const endModelWidth = clamp(rightPaneWidth * 0.88, 420, rightPaneWidth);
+        const modelBleed = clamp(window.innerWidth * 0.10, 96, 220);
         const endLeftWidth = window.innerWidth;
         const endFont = clamp(window.innerWidth * 0.12, 78, 220);
         const end = {
@@ -1009,9 +1009,8 @@
           leftHeight: window.innerHeight,
           leftFont: endFont,
           modelTop: -modelBleed,
-          // Render outside viewport bounds to prevent hard clipping on extreme animations.
-          modelLeft: -modelBleed,
-          modelWidth: window.innerWidth + modelBleed * 2,
+          modelLeft: rightPaneLeft + (rightPaneWidth - endModelWidth) * 0.5 - modelBleed,
+          modelWidth: endModelWidth + modelBleed * 2,
           modelHeight: endModelHeight + modelBleed * 2
         };
 
@@ -1835,12 +1834,12 @@
           expandedView = {
             pos: new THREE.Vector3(
               baseView.pos.x + finalSize.x * 0.14,
-              baseView.pos.y + finalSize.y * 0.1,
-              Math.max(92, baseView.pos.z * 0.72)
+              baseView.pos.y + finalSize.y * 0.02,
+              Math.max(150, baseView.pos.z * 1.12)
             ),
             target: new THREE.Vector3(
               baseView.target.x + finalSize.x * 0.14,
-              baseView.target.y + finalSize.y * 0.06,
+              baseView.target.y,
               baseView.target.z
             )
           };
