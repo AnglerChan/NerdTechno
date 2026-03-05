@@ -991,8 +991,11 @@
         };
 
         const pad = 0;
-        const endModelWidth = clamp(window.innerWidth * 0.68, 520, 1480);
-        const modelBleed = clamp(window.innerWidth * 0.1, 80, 280);
+        const endModelHeight = window.innerHeight;
+        const rightPaneLeft = window.innerWidth * 0.56;
+        const rightPaneWidth = window.innerWidth - rightPaneLeft;
+        const endModelWidth = clamp(rightPaneWidth * 0.96, 420, rightPaneWidth);
+        const modelBleed = clamp(window.innerWidth * 0.06, 56, 140);
         const endLeftWidth = window.innerWidth;
         const endFont = clamp(window.innerWidth * 0.12, 78, 220);
         const end = {
@@ -1006,9 +1009,9 @@
           leftHeight: window.innerHeight,
           leftFont: endFont,
           modelTop: -modelBleed,
-          modelLeft: window.innerWidth - endModelWidth - modelBleed,
+          modelLeft: rightPaneLeft + (rightPaneWidth - endModelWidth) * 0.5 - modelBleed,
           modelWidth: endModelWidth + modelBleed * 2,
-          modelHeight: window.innerHeight + modelBleed * 2
+          modelHeight: endModelHeight + modelBleed * 2
         };
 
         return { stage, overlay, shell, leftPane, titleEl, tagsEl, modelBox, start, end, pillStates, pillHandlers: [] };
@@ -1830,13 +1833,13 @@
           };
           expandedView = {
             pos: new THREE.Vector3(
-              baseView.pos.x,
-              baseView.pos.y + finalSize.y * 0.02,
-              Math.max(150, baseView.pos.z * 1.12)
+              baseView.pos.x + finalSize.x * 0.14,
+              baseView.pos.y + finalSize.y * 0.1,
+              Math.max(92, baseView.pos.z * 0.72)
             ),
             target: new THREE.Vector3(
-              baseView.target.x,
-              baseView.target.y + finalSize.y * 0.12,
+              baseView.target.x + finalSize.x * 0.14,
+              baseView.target.y + finalSize.y * 0.06,
               baseView.target.z
             )
           };
