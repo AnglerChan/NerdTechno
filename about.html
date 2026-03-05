@@ -995,7 +995,7 @@
         const rightPaneLeft = window.innerWidth * 0.56;
         const rightPaneWidth = window.innerWidth - rightPaneLeft;
         const endModelWidth = clamp(rightPaneWidth * 0.96, 420, rightPaneWidth);
-        const modelBleed = clamp(window.innerWidth * 0.06, 56, 140);
+        const modelBleed = clamp(window.innerWidth * 0.24, 220, 520);
         const endLeftWidth = window.innerWidth;
         const endFont = clamp(window.innerWidth * 0.12, 78, 220);
         const end = {
@@ -1009,8 +1009,9 @@
           leftHeight: window.innerHeight,
           leftFont: endFont,
           modelTop: -modelBleed,
-          modelLeft: rightPaneLeft + (rightPaneWidth - endModelWidth) * 0.5 - modelBleed,
-          modelWidth: endModelWidth + modelBleed * 2,
+          // Render outside viewport bounds to prevent hard clipping on extreme animations.
+          modelLeft: -modelBleed,
+          modelWidth: window.innerWidth + modelBleed * 2,
           modelHeight: endModelHeight + modelBleed * 2
         };
 
