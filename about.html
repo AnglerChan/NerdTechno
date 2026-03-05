@@ -23,6 +23,7 @@
   <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png" />
   <link rel="mask-icon" href="/assets/favicon.svg" color="#9aff00" />
   <link rel="stylesheet" href="./styles.css?v=6" />
+  <script src="/assets/site-loader.js"></script>
 </head>
 <body>
   <section class="mobile-desktop-notice" aria-label="Desktop Mode Required">
@@ -40,9 +41,9 @@
     </div>
   </section>
   <header class="site-nav">
-    <a class="nav-link" href="./index.html">INDEX</a>
-    <a class="nav-link" href="./works.html">WORKS</a>
-    <a class="nav-link is-active" href="./about.html" aria-current="page">ABOUT</a>
+    <a class="nav-link" href="/">INDEX</a>
+    <a class="nav-link" href="/works">WORKS</a>
+    <a class="nav-link is-active" href="/about" aria-current="page">ABOUT</a>
   </header>
 
   <main class="page">
@@ -1038,13 +1039,13 @@
           window.removeEventListener("wheel", active.onWheel, { capture: true });
         }
         if (active.onProxyPointerMove) {
-          active.overlay.removeEventListener("pointermove", active.onProxyPointerMove);
+          active.modelBox.removeEventListener("pointermove", active.onProxyPointerMove);
         }
         if (active.onProxyPointerEnter) {
-          active.overlay.removeEventListener("pointerenter", active.onProxyPointerEnter, true);
+          active.modelBox.removeEventListener("pointerenter", active.onProxyPointerEnter);
         }
         if (active.onProxyPointerLeave) {
-          active.overlay.removeEventListener("pointerleave", active.onProxyPointerLeave);
+          active.modelBox.removeEventListener("pointerleave", active.onProxyPointerLeave);
         }
         if (active.onModelCanvasClick) {
           active.stage.removeEventListener("about:model-canvas-click", active.onModelCanvasClick);
@@ -1109,6 +1110,7 @@
         const stageParent = state.stage.parentElement;
         const stageNext = state.stage.nextSibling;
         state.proxyHoverIndex = -1;
+        const pillIndexByEl = new Map(state.pillStates.map((pillState, index) => [pillState.el, index]));
         const onEsc = (keyEvent) => {
           if (keyEvent.key === "Escape") closeExpanded();
         };
@@ -1137,23 +1139,39 @@
             animatePillHoverIn(state.pillStates[nextIndex]);
           }
         };
+        const pickNearestPillIndexByY = (clientY) => {
+          if (state.pillStates.length === 0) return -1;
+          let nearestIndex = -1;
+          let nearestDistance = Infinity;
+          for (let i = 0; i < state.pillStates.length; i += 1) {
+            const rect = state.pillStates[i].el.getBoundingClientRect();
+            if (rect.height <= 0) continue;
+            const centerY = rect.top + rect.height * 0.5;
+            const distance = Math.abs(centerY - clientY);
+            if (distance < nearestDistance) {
+              nearestDistance = distance;
+              nearestIndex = i;
+            }
+          }
+          return nearestIndex;
+        };
+        const pickPillIndexBehindModel = (clientX, clientY) => {
+          const prevPointerEvents = state.modelBox.style.pointerEvents;
+          state.modelBox.style.pointerEvents = "none";
+          const behindEl = document.elementFromPoint(clientX, clientY);
+          state.modelBox.style.pointerEvents = prevPointerEvents;
+          if (!(behindEl instanceof Element)) return -1;
+          const pillEl = behindEl.closest(".about-pill");
+          if (!(pillEl instanceof Element)) return -1;
+          if (!state.tagsEl.contains(pillEl)) return -1;
+          return pillIndexByEl.has(pillEl) ? pillIndexByEl.get(pillEl) : -1;
+        };
         const onProxyPointerMove = (pointerEvent) => {
           if (!active || active.isClosing || active.stage.id !== state.stage.id) return;
-          const target = pointerEvent.target;
-          if (!(target instanceof Element)) return;
-
-          if (!state.modelBox.contains(target)) {
-            if ((state.proxyHoverIndex ?? -1) >= 0) setProxyHoverIndex(-1);
-            return;
+          let index = pickPillIndexBehindModel(pointerEvent.clientX, pointerEvent.clientY);
+          if (index < 0) {
+            index = pickNearestPillIndexByY(pointerEvent.clientY);
           }
-
-          const rect = state.modelBox.getBoundingClientRect();
-          if (rect.height <= 0 || state.pillStates.length === 0) return;
-
-          const y = clamp(pointerEvent.clientY - rect.top, 0, rect.height - 1);
-          const ratio = y / Math.max(1, rect.height - 1);
-          const mappedIndex = Math.floor(ratio * state.pillStates.length);
-          const index = clamp(mappedIndex, 0, state.pillStates.length - 1);
           setProxyHoverIndex(index);
         };
         const onProxyPointerEnter = (pointerEvent) => {
@@ -1176,9 +1194,9 @@
         document.body.classList.add("about-expand-lock");
         window.addEventListener("keydown", onEsc);
         window.addEventListener("wheel", onWheel, { passive: false, capture: true });
-        state.overlay.addEventListener("pointermove", onProxyPointerMove, { passive: true });
-        state.overlay.addEventListener("pointerenter", onProxyPointerEnter, true);
-        state.overlay.addEventListener("pointerleave", onProxyPointerLeave);
+        state.modelBox.addEventListener("pointermove", onProxyPointerMove, { passive: true });
+        state.modelBox.addEventListener("pointerenter", onProxyPointerEnter);
+        state.modelBox.addEventListener("pointerleave", onProxyPointerLeave);
         state.stage.addEventListener("about:model-canvas-click", onModelCanvasClick);
 
         state.overlay.addEventListener("click", (overlayEvent) => {
@@ -1284,7 +1302,7 @@
           options.push({
             label: "MORE",
             action: () => {
-              window.location.href = "./te-access.html";
+              window.location.href = "/access";
             }
           });
         }
@@ -1470,14 +1488,16 @@
       const modelConfigs = [
         {
           stageId: "haoxiang-model-stage",
-          idleUrl: "./assets/models/Haoxiang_standing.fbx",
-          moveUrl: "./assets/models/Haoxiang_dancing.fbx"
+          idleUrl: "./assets/models/Haoxiang_standing.fbx?v=20260305k",
+          moveUrl: "./assets/models/Haoxiang_dancing.fbx?v=20260305k",
+          actionNames: { idle: "idle", move: "dance" }
         },
         {
           stageId: "haocheng-model-stage",
-          idleUrl: "./assets/models/Haocheng_walking.fbx",
-          moveUrl: "./assets/models/Haocheng_dancing2.fbx",
-          clickUrl: "./assets/models/Haocheng_fall.fbx"
+          idleUrl: "./assets/models/Haocheng_walking.fbx?v=20260305k",
+          moveUrl: "./assets/models/Haocheng_dancing.fbx?v=20260305k",
+          clickUrl: "./assets/models/Haocheng_fall.fbx?v=20260305k",
+          actionNames: { idle: "walk", move: "dance", click: "fall" }
         }
       ];
       const activeConfigs = modelConfigs.filter((config) => document.querySelector(`#${config.stageId}`));
@@ -1631,16 +1651,41 @@
         const loader = new FBXLoader();
         const slashIndex = config.idleUrl.lastIndexOf("/");
         const modelDir = slashIndex >= 0 ? config.idleUrl.slice(0, slashIndex + 1) : "./assets/models/";
-        loader.setResourcePath(`${modelDir}mesh_animate.fbm/`);
+        loader.setResourcePath(config.resourcePath || `${modelDir}mesh_animate.fbm/`);
         const loadFbx = (url) => new Promise((resolve, reject) => {
           loader.load(url, resolve, undefined, reject);
         });
+        const loadTexture = (url) => new Promise((resolve, reject) => {
+          new THREE.TextureLoader().load(url, resolve, undefined, reject);
+        });
+        const sanitizeClip = (clip) => {
+          if (!clip || !Array.isArray(clip.tracks)) return clip;
+          // Keep source clips intact; over-filtering can strip skeletal tracks and freeze motion.
+          return clip;
+        };
+
+        const pickClip = (fbx, preferredName) => {
+          const clips = (fbx && fbx.animations) || [];
+          if (clips.length === 0) return null;
+          if (!preferredName) return sanitizeClip(clips[0]);
+          const keyword = String(preferredName).toLowerCase();
+          const clip = clips.find((candidate) => String(candidate.name || "").toLowerCase().includes(keyword)) || clips[0];
+          return sanitizeClip(clip);
+        };
         const normalizeMaterial = (material) => {
           if (!material) return;
           const hasColorMap = Boolean(material.map);
           if (!hasColorMap && material.color) {
             material.color.set(0xf2f2f2);
           }
+          // Some optimized FBX exports carry transparent/opacity flags that hide meshes.
+          if ("transparent" in material) material.transparent = false;
+          if ("opacity" in material && (!Number.isFinite(material.opacity) || material.opacity < 0.98)) {
+            material.opacity = 1;
+          }
+          if ("alphaTest" in material) material.alphaTest = 0;
+          if ("depthWrite" in material) material.depthWrite = true;
+          if ("side" in material) material.side = THREE.DoubleSide;
           if ("metalness" in material) material.metalness = 0;
           if ("roughness" in material) material.roughness = 0.88;
           if ("emissive" in material) {
@@ -1664,6 +1709,7 @@
           next.fadeIn(0.14);
           next.play();
           currentAnimation = name;
+          stage.dataset.currentAnimation = name;
         };
 
         const pickModelHit = (event) => {
@@ -1713,19 +1759,44 @@
         }
 
         try {
-          const [idleFbx, moveFbx, clickFbx] = await Promise.all([
-            loadFbx(config.idleUrl),
-            loadFbx(config.moveUrl).catch(() => null),
-            config.clickUrl ? loadFbx(config.clickUrl).catch(() => null) : Promise.resolve(null)
-          ]);
+          const idlePromise = loadFbx(config.idleUrl);
+          const movePromise = config.moveUrl === config.idleUrl
+            ? idlePromise
+            : loadFbx(config.moveUrl).catch(() => null);
+          const clickPromise = !config.clickUrl
+            ? Promise.resolve(null)
+            : config.clickUrl === config.idleUrl
+              ? idlePromise
+              : loadFbx(config.clickUrl).catch(() => null);
+          const texturePromise = config.compressedTextureUrl
+            ? loadTexture(config.compressedTextureUrl).catch(() => null)
+            : Promise.resolve(null);
+          const [idleFbx, moveFbx, clickFbx, compressedTexture] = await Promise.all([idlePromise, movePromise, clickPromise, texturePromise]);
+          if (compressedTexture && "colorSpace" in compressedTexture) {
+            compressedTexture.colorSpace = THREE.SRGBColorSpace;
+          }
 
           idleFbx.traverse((child) => {
             if (!child.isMesh) return;
             child.castShadow = false;
             child.receiveShadow = false;
             if (Array.isArray(child.material)) {
-              child.material.forEach((material) => normalizeMaterial(material));
+              child.material.forEach((material) => {
+                if (compressedTexture) {
+                  material.map = compressedTexture;
+                  material.normalMap = null;
+                  material.roughnessMap = null;
+                  material.metalnessMap = null;
+                }
+                normalizeMaterial(material);
+              });
             } else {
+              if (compressedTexture) {
+                child.material.map = compressedTexture;
+                child.material.normalMap = null;
+                child.material.roughnessMap = null;
+                child.material.metalnessMap = null;
+              }
               normalizeMaterial(child.material);
             }
           });
@@ -1742,10 +1813,15 @@
           scene.add(idleFbx);
           modelRoot = idleFbx;
 
-          const finalBox = new THREE.Box3().setFromObject(idleFbx);
-          const finalSize = finalBox.getSize(new THREE.Vector3());
-          controls.target.set(0, finalSize.y * 0.56, 0);
-          camera.position.set(0, finalSize.y * 0.72 + 10, Math.max(140, finalSize.z * 2.45));
+          let finalBox = new THREE.Box3().setFromObject(idleFbx);
+          let finalSize = finalBox.getSize(new THREE.Vector3());
+          const finalCenter = finalBox.getCenter(new THREE.Vector3());
+          controls.target.copy(finalCenter);
+          camera.position.set(
+            finalCenter.x,
+            finalCenter.y + finalSize.y * 0.18 + 12,
+            finalCenter.z + Math.max(140, finalSize.z * 2.45)
+          );
           camera.lookAt(controls.target);
           controls.update();
           baseView = {
@@ -1755,26 +1831,22 @@
           expandedView = {
             pos: new THREE.Vector3(
               baseView.pos.x,
-              baseView.pos.y + finalSize.y * 0.06,
-              Math.max(110, baseView.pos.z * 0.72)
+              baseView.pos.y + finalSize.y * 0.02,
+              Math.max(150, baseView.pos.z * 1.12)
             ),
             target: new THREE.Vector3(
               baseView.target.x,
-              baseView.target.y + finalSize.y * 0.03,
+              baseView.target.y + finalSize.y * 0.12,
               baseView.target.z
             )
           };
-
           mixer = new THREE.AnimationMixer(idleFbx);
-          if (idleFbx.animations && idleFbx.animations.length > 0) {
-            actions.idle = mixer.clipAction(idleFbx.animations[0]);
-          }
-          if (moveFbx && moveFbx.animations && moveFbx.animations.length > 0) {
-            actions.move = mixer.clipAction(moveFbx.animations[0]);
-          }
-          if (clickFbx && clickFbx.animations && clickFbx.animations.length > 0) {
-            actions.click = mixer.clipAction(clickFbx.animations[0]);
-          }
+          const idleClip = pickClip(idleFbx, config.actionNames && config.actionNames.idle);
+          const moveClip = pickClip(moveFbx, config.actionNames && config.actionNames.move);
+          const clickClip = pickClip(clickFbx, config.actionNames && config.actionNames.click);
+          if (idleClip) actions.idle = mixer.clipAction(idleClip);
+          if (moveClip) actions.move = mixer.clipAction(moveClip);
+          if (clickClip) actions.click = mixer.clipAction(clickClip);
 
           playAnimation("idle");
           stage.classList.add("is-ready");
@@ -1813,7 +1885,15 @@
         return disposeViewer;
       };
 
-      const initResults = await Promise.all(activeConfigs.map((config) => initModelViewer(config)));
+      const initResults = await Promise.all(activeConfigs.map((config) => (
+        initModelViewer(config).catch((error) => {
+          const stageEl = document.querySelector(`#${config.stageId}`);
+          markModelError(stageEl, error);
+          stageLoadState.set(config.stageId, true);
+          revealStagesWhenReady();
+          return null;
+        })
+      )));
       initResults.forEach((dispose) => {
         if (typeof dispose === "function") disposers.push(dispose);
       });
